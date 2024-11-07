@@ -3,99 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Timer Pro</title>
+    <title>Study Timer</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/alertify.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/themes/default.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <style>
-        /* Base Theme */
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        /* Light Mode */
-        body {
-            background: #f7f7f7;
-            transition: all 0.3s ease;
-        }
-
-        .card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        /* Dark Mode */
         body.dark {
-            background: #121212;
+            background-color: #121212;
         }
-
-        .dark .card {
-            background: #1e1e1e;
-            border: 1px solid #333;
-        }
-
-        .dark .dark\:bg-custom-dark {
+        .dark .dark\:bg-gray-800 {
             background-color: #1a1a2e;
         }
-
-        .dark .dark\:bg-custom-card {
+        .dark .dark\:bg-gray-700 {
             background-color: #16213e;
         }
-
-        .dark .dark\:text-custom-light {
+        .dark .dark\:text-white {
             color: #e2e8f0;
         }
-
-        .dark .dark\:border-custom-border {
+        .dark .dark\:border-gray-600 {
             border-color: #2a2a4a;
         }
-
-        /* Enhanced Input Styles */
+        .progress-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .dark .progress-gradient {
+            background: linear-gradient(135deg, #4F46E5 0%, #9333EA 100%);
+        }
+        .hidden {
+            display: none !important;
+        }
         .dark input[type="text"],
         .dark input[type="number"],
-        .dark select,
-        .dark textarea {
+        .dark select {
             color: white;
-            background-color: #2d3748;
-            border-color: #4a5568;
+            background-color: #374151;
         }
-
-        .dark input[type="text"]:focus,
-        .dark input[type="number"]:focus,
-        .dark select:focus,
-        .dark textarea:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+        .dark input[type="text"]::placeholder,
+        .dark input[type="number"]::placeholder {
+            color: #9ca3af;
         }
-
-        /* Progress Bars */
-        .progress-gradient {
-            background: var(--primary-gradient);
+        .task-list {
+            max-height: 60vh;
+            overflow-y: auto;
         }
-
-        .progress-bar-container {
-            background: #e2e8f0;
-            border-radius: 9999px;
-            padding: 2px;
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
-
-        .dark .progress-bar-container {
-            background: #2d3748;
+        .dark .card {
+            background: #1a1a2e;
         }
-
-        /* Animations */
+        .stat-card {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+        }
+        .dark .stat-card {
+            background: #1e293b;
+        }
+        .btn-primary {
+            background: #4F46E5;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #4338CA;
+        }
+        .btn-secondary {
+            background: #6B7280;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #4B5563;
+        }
         @keyframes slideIn {
             from {
                 transform: translateY(20px);
@@ -106,206 +96,30 @@
                 opacity: 1;
             }
         }
-
         .slide-in {
             animation: slideIn 0.3s ease-out forwards;
         }
-
-        /* Stat Cards */
-        .stat-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .dark .stat-card {
-            background: #2d3748;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .dark .stat-value {
-            opacity: 0.9;
-        }
-
-        /* Charts */
-        .chart-container {
-            background: white;
-            border-radius: 1rem;
-            padding: 1rem;
-            margin: 1rem 0;
-            box-shadow: var(--card-shadow);
-        }
-
-        .dark .chart-container {
-            background: #2d3748;
-        }
-
-        /* Task List */
-        .task-list {
-            max-height: 60vh;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #cbd5e0 transparent;
-        }
-
-        .task-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .task-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .task-list::-webkit-scrollbar-thumb {
-            background-color: #cbd5e0;
-            border-radius: 3px;
-        }
-
-        .dark .task-list::-webkit-scrollbar-thumb {
-            background-color: #4a5568;
-        }
-
-        /* Button Styles */
-        .btn-primary {
-            background: var(--primary-gradient);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-secondary {
-            background: var(--secondary-gradient);
-            color: #2d3748;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Achievement Badge */
-        .achievement-badge {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            background: var(--secondary-gradient);
-            color: #2d3748;
-            font-weight: 600;
-            margin: 0.25rem;
-        }
-
-        .dark .achievement-badge {
-            color: white;
-            background: var(--primary-gradient);
-        }
-
-        /* Navigation */
-        .nav-item {
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .nav-item:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .dark .nav-item:hover {
-            background: rgba(102, 126, 234, 0.2);
-        }
     </style>
 </head>
-<body class="min-h-screen transition-colors duration-200">
-    <!-- Navigation Bar -->
-    <nav class="fixed top-0 w-full bg-white dark:bg-gray-800 shadow-lg z-50 transition-all duration-200">
+<body class="min-h-screen bg-gray-100 transition-colors duration-200">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full bg-white dark:bg-gray-800 shadow-lg z-50">
         <div class="container mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">Study Timer</h1>
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Study Timer Pro</h1>
-                    <span id="userInfo" class="hidden px-3 py-1 bg-green-500 text-white rounded-full text-sm"></span>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button id="analyticsBtn" onclick="toggleAnalyticsView()" 
-                        class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                </path>
-                            </svg>
-                            Analytics
-                        </span>
+                    <span id="userInfo" class="hidden px-4 py-2 bg-green-500 text-white rounded"></span>
+                    <button 
+                        id="themeToggle" 
+                        onclick="toggleTheme()"
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Toggle Theme
                     </button>
-                    <button id="achievementsBtn" onclick="toggleAchievementsView()"
-                        class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-yellow-600 dark:hover:text-yellow-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
-                                </path>
-                            </svg>
-                            Achievements
-                        </span>
-                    </button>
-                    <button id="settingsBtn" onclick="toggleSettingsView()"
-                        class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                                </path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
-                                </path>
-                            </svg>
-                            Settings
-                        </span>
-                    </button>
-                    <button id="themeToggle" onclick="toggleTheme()" 
-                        class="nav-item text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
-                                </path>
-                            </svg>
-                            Theme
-                        </span>
-                    </button>
-                    <button id="logoutBtn" onclick="logout()" 
-                        class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
-                                </path>
-                            </svg>
-                            Logout
-                        </span>
+                    <button 
+                        id="logoutBtn" 
+                        onclick="logout()"
+                        class="hidden px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                        Logout
                     </button>
                 </div>
             </div>
@@ -315,138 +129,69 @@
     <!-- Login Form -->
     <div id="loginForm" class="container mx-auto mt-20 max-w-md p-6">
         <div class="card p-8 slide-in">
-            <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white text-center">Welcome to Study Timer Pro</h2>
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Welcome to Study Timer</h2>
             <div class="space-y-4">
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        id="username" 
-                        placeholder="Enter username"
-                        class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                               dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                    >
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                            </path>
-                        </svg>
-                    </div>
-                </div>
+                <input 
+                    type="text" 
+                    id="username" 
+                    placeholder="Enter username"
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500 
+                           dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
                 <button 
                     onclick="login()"
-                    class="w-full btn-primary font-semibold py-3 rounded-lg transform transition hover:scale-105">
+                    class="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
                     Get Started
                 </button>
-                <p class="text-sm text-center text-gray-600 dark:text-gray-400">
-                    Track your study sessions, analyze your progress, and improve your productivity
-                </p>
             </div>
         </div>
     </div>
 
     <!-- Mode Selection -->
     <div id="modeSelection" class="hidden container mx-auto mt-20 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 slide-in">
-            <div class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
-                <div class="flex items-center justify-between mb-4">
-                    <svg class="w-10 h-10 text-blue-500 group-hover:text-blue-600 transition-colors" 
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Focused Sessions</span>
-                </div>
-                <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-blue-600 
-                           dark:group-hover:text-blue-400 transition-colors">Timer Mode</h3>
-                <p class="text-gray-600 dark:text-gray-300">Set specific time limits for your study sessions. 
-                    Perfect for structured learning and time management.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card p-6 cursor-pointer hover:shadow-lg transition-all" onclick="selectMode('timer')">
+                <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white">Timer Mode</h3>
+                <p class="text-gray-600 dark:text-gray-400">Set a specific time limit for your study session</p>
             </div>
-
-            <div class="card p-6 cursor-pointer group" onclick="selectMode('stopwatch')">
-                <div class="flex items-center justify-between mb-4">
-                    <svg class="w-10 h-10 text-green-500 group-hover:text-green-600 transition-colors" 
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
-                        </path>
-                    </svg>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Flexible Learning</span>
-                </div>
-                <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-green-600 
-                           dark:group-hover:text-green-400 transition-colors">Stopwatch Mode</h3>
-                <p class="text-gray-600 dark:text-gray-300">Track your study time without limits. 
-                    Ideal for self-paced learning and deep work sessions.</p>
+            <div class="card p-6 cursor-pointer hover:shadow-lg transition-all" onclick="selectMode('stopwatch')">
+                <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white">Stopwatch Mode</h3>
+                <p class="text-gray-600 dark:text-gray-400">Track your study time without limits</p>
             </div>
         </div>
     </div>
 
     <!-- Setup Form -->
     <div id="setupForm" class="hidden container mx-auto mt-20 p-6">
-        <div class="card p-6 slide-in">
-            <div id="timerSetup" class="hidden mb-8">
-                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Session Duration</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="relative">
-                        <input type="number" id="hours" placeholder="Hours" min="0"
-                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                            hrs
-                        </span>
-                    </div>
-                    <div class="relative">
-                        <input type="number" id="minutes" placeholder="Minutes" min="0" max="59"
-                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                            min
-                        </span>
-                    </div>
+        <div class="card p-6">
+            <div id="timerSetup" class="hidden mb-6">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Set Timer Duration</h3>
+                <div class="flex space-x-4">
+                    <input type="number" id="hours" placeholder="Hours" min="0"
+                        class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500 
+                               dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    <input type="number" id="minutes" placeholder="Minutes" min="0" max="59"
+                        class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500 
+                               dark:bg-gray-700 dark:text-white dark:border-gray-600">
                 </div>
             </div>
 
-            <div class="mb-8">
-                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Break Settings</h3>
+            <div class="mb-6">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Break Mode</h3>
                 <select id="breakMode" 
-                    class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500 
                            dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    <option value="pomodoro">Pomodoro (25min work / 5min break)</option>
-                    <option value="long">Long Sessions (50min work / 10min break)</option>
-                    <option value="custom">Custom Settings</option>
-                    <option value="none">No Breaks</option>
+                    <option value="pomodoro">25min work / 5min break</option>
+                    <option value="long">50min work / 10min break</option>
+                    <option value="none">No breaks</option>
                 </select>
             </div>
 
-            <div id="customBreakSettings" class="hidden mb-8">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="relative">
-                        <input type="number" id="workDuration" placeholder="Work Duration" min="1"
-                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                            min
-                        </span>
-                    </div>
-                    <div class="relative">
-                        <input type="number" id="breakDuration" placeholder="Break Duration" min="1"
-                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                            min
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-8">
+            <div class="mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white">Tasks</h3>
                     <button onclick="addMainTask()" 
-                        class="btn-secondary flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
                         Add Task
                     </button>
                 </div>
@@ -455,26 +200,8 @@
                 </div>
             </div>
 
-            <div class="mb-8">
-                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Additional Options</h3>
-                <div class="space-y-3">
-                    <label class="flex items-center">
-                        <input type="checkbox" id="enableSoundEffects" class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700 dark:text-gray-300">Enable sound effects</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="checkbox" id="enableNotifications" class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700 dark:text-gray-300">Enable desktop notifications</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="checkbox" id="trackProductivity" class="form-checkbox h-5 w-5 text-blue-600">
-                        <span class="ml-2 text-gray-700 dark:text-gray-300">Track productivity score</span>
-                    </label>
-                </div>
-            </div>
-
             <button onclick="startSession()" 
-                class="w-full btn-primary py-4 text-lg font-semibold rounded-lg transform transition hover:scale-105">
+                class="w-full px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
                 Start Session
             </button>
         </div>
@@ -482,73 +209,31 @@
 
     <!-- Session View -->
     <div id="sessionView" class="hidden container mx-auto mt-20 p-6">
-        <div class="card p-6 slide-in">
+        <div class="card p-6">
             <div class="text-center mb-8">
-                <div class="mb-4">
-                    <span id="sessionStatus" class="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800 
-                                                  dark:bg-green-900 dark:text-green-200">
-                        In Progress
-                    </span>
-                </div>
-                <h2 id="timeDisplay" class="text-6xl font-bold mb-4 text-gray-800 dark:text-white 
-                                          font-mono tracking-wider">00:00:00</h2>
-                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 p-0.5">
-                    <div id="timeProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" 
+                <h2 id="timeDisplay" class="text-6xl font-bold mb-4 text-gray-800 dark:text-white">00:00:00</h2>
+                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
+                    <div id="timeProgress" class="progress-gradient h-4 rounded-full transition-all duration-300" 
                         style="width: 0%">
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Streak</h4>
-                    <p id="currentStreak" class="stat-value">0 min</p>
-                </div>
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Focus Score</h4>
-                    <p id="focusScore" class="stat-value">0%</p>
-                </div>
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Break</h4>
-                    <p id="nextBreakTime" class="stat-value">--:--</p>
-                </div>
-            </div>
-
             <div class="flex justify-center space-x-4 mb-8">
                 <button id="startPauseBtn" onclick="toggleTimer()" 
-                    class="px-8 py-4 rounded-lg text-white bg-green-500 hover:bg-green-600 
-                           transition-all duration-200 flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
-                        </path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                        </path>
-                    </svg>
+                    class="px-8 py-3 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
                     Start
                 </button>
                 <button onclick="resetSession()" 
-                    class="px-8 py-4 rounded-lg text-white bg-red-500 hover:bg-red-600 
-                           transition-all duration-200 flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                        </path>
-                    </svg>
+                    class="px-8 py-3 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
                     Reset
                 </button>
             </div>
 
             <div class="mb-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Task Progress</h3>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                        <span id="completedTaskCount">0</span> / <span id="totalTaskCount">0</span> completed
-                    </div>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 p-0.5">
-                    <div id="taskProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" 
+                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Task Progress</h3>
+                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
+                    <div id="taskProgress" class="progress-gradient h-4 rounded-full transition-all duration-300" 
                         style="width: 0%">
                     </div>
                 </div>
@@ -559,1084 +244,76 @@
             </div>
 
             <button onclick="completeSession()" 
-                class="w-full px-6 py-4 rounded-lg text-white bg-purple-500 hover:bg-purple-600 
-                       transition-all duration-200 flex items-center justify-center">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
-                    </path>
-                </svg>
+                class="w-full px-6 py-3 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors">
                 Complete Session
             </button>
         </div>
     </div>
 
-    <!-- Analytics View -->
-    <div id="analyticsView" class="hidden container mx-auto mt-20 p-6">
-        <div class="card p-6 slide-in">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Study Analytics</h2>
-                <div class="flex space-x-4">
-                    <button onclick="exportAnalytics('pdf')" 
-                        class="btn-secondary flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                        Export PDF
-                    </button>
-                    <button onclick="resetStatistics()" 
-                        class="btn-secondary flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                            </path>
-                        </svg>
-                        Reset Stats
-                    </button>
-                </div>
+    <!-- Report View -->
+    <div id="reportView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Session Report</h2>
+            <div id="reportContent" class="space-y-4">
+                <!-- Report content will be inserted here -->
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Study Time</h4>
-                    <p id="totalStudyTime" class="stat-value text-blue-600 dark:text-blue-400">0h</p>
-                </div>
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Sessions Completed</h4>
-                    <p id="totalSessions" class="stat-value text-green-600 dark:text-green-400">0</p>
-                </div>
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Completion Rate</h4>
-                    <p id="avgCompletionRate" class="stat-value text-purple-600 dark:text-purple-400">0%</p>
-                </div>
-                <div class="stat-card">
-                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Streak</h4>
-                    <p id="studyStreak" class="stat-value text-yellow-600 dark:text-yellow-400">0 days</p>
-                </div>
-            </div>
-
-            <!-- Study Pattern Analysis -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="chart-container">
-                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Daily Study Pattern</h3>
-                    <canvas id="dailyPatternChart"></canvas>
-                </div>
-                <div class="chart-container">
-                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Focus Distribution</h3>
-                    <canvas id="focusDistributionChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Productivity Insights -->
-            <div class="card p-6 mb-8">
-                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Productivity Insights</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="text-md font-semibold mb-2 text-gray-700 dark:text-gray-300">Most Productive Time</h4>
-                        <div id="productiveTimeStats" class="space-y-2">
-                            <!-- Productive time stats will be inserted here -->
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="text-md font-semibold mb-2 text-gray-700 dark:text-gray-300">Break Analysis</h4>
-                        <div id="breakAnalysis" class="space-y-2">
-                            <!-- Break analysis will be inserted here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Task Analytics -->
-            <div class="card p-6 mb-8">
-                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Task Performance</h3>
-                <div id="taskAnalytics" class="space-y-4">
-                    <!-- Task analytics will be inserted here -->
-                </div>
-            </div>
-
-            <!-- Achievement Progress -->
-            <div class="card p-6">
-                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Recent Achievements</h3>
-                <div id="achievementProgress" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Achievement progress will be inserted here -->
-                </div>
+            <div class="mt-8 flex space-x-4">
+                <button onclick="startNewSession()" 
+                    class="flex-1 px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                    Start New Session
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Enhanced Analytics System
-        const Analytics = {
-            // Data Storage
-            data: {
-                sessions: [],
-                achievements: [],
-                stats: {
-                    totalTime: 0,
-                    totalSessions: 0,
-                    completionRates: [],
-                    streakDays: 0,
-                    productiveHours: Array(24).fill(0),
-                    taskStats: {},
-                    breakPatterns: [],
-                    focusScores: []
-                }
-            },
-
-            // Initialize Analytics
-            init() {
-                const savedData = localStorage.getItem('studyAnalytics');
-                if (savedData) {
-                    this.data = JSON.parse(savedData);
-                }
-                this.updateUI();
-            },
-
-            // Save Session
-            saveSession(sessionData) {
-                const session = {
-                    id: Date.now(),
-                    date: new Date().toISOString(),
-                    duration: sessionData.elapsedTime,
-                    mode: sessionData.mode,
-                    tasks: sessionData.tasks.map(task => ({
-                        title: task.title,
-                        completed: task.completed,
-                        duration: this.getTaskDuration(task),
-                        subtasks: task.subtasks.map(st => ({
-                            title: st.title,
-                            completed: st.completed
-                        }))
-                    })),
-                    breaks: sessionData.breaks,
-                    focusScore: this.calculateFocusScore(sessionData),
-                    productivity: this.calculateProductivityScore(sessionData)
-                };
-
-                this.data.sessions.push(session);
-                this.updateStats();
-                this.checkAchievements(session);
-                this.save();
-            },
-
-            // Calculate Focus Score
-            calculateFocusScore(sessionData) {
-                const totalTime = sessionData.elapsedTime;
-                const breakTime = sessionData.breaks.reduce((acc, br) => acc + br.duration, 0);
-                const completionRate = this.calculateCompletionRate(sessionData.tasks);
-                
-                // Weight factors
-                const timeWeight = 0.4;
-                const breakWeight = 0.3;
-                const completionWeight = 0.3;
-
-                // Calculate individual scores
-                const timeScore = Math.min(totalTime / (45 * 60 * 1000), 1); // Normalize to 45 minutes
-                const breakScore = 1 - (breakTime / totalTime);
-                const taskScore = completionRate / 100;
-
-                return Math.round(
-                    (timeScore * timeWeight + 
-                     breakScore * breakWeight + 
-                     taskScore * completionWeight) * 100
-                );
-            },
-
-            // Calculate Productivity Score
-            calculateProductivityScore(sessionData) {
-                const completionRate = this.calculateCompletionRate(sessionData.tasks);
-                const focusScore = this.calculateFocusScore(sessionData);
-                const timeEfficiency = this.calculateTimeEfficiency(sessionData);
-
-                return Math.round((completionRate + focusScore + timeEfficiency) / 3);
-            },
-
-            // Calculate Time Efficiency
-            calculateTimeEfficiency(sessionData) {
-                const plannedDuration = sessionData.mode === 'timer' ? sessionData.totalTime : 0;
-                const actualDuration = sessionData.elapsedTime;
-                const breakTime = sessionData.breaks.reduce((acc, br) => acc + br.duration, 0);
-                const netDuration = actualDuration - breakTime;
-
-                if (plannedDuration === 0) return 100; // For stopwatch mode
-                return Math.min(100, Math.round((plannedDuration / netDuration) * 100));
-            },
-
-            // Update Statistics
-            updateStats() {
-                const stats = this.data.stats;
-                const sessions = this.data.sessions;
-
-                stats.totalTime = sessions.reduce((acc, s) => acc + s.duration, 0);
-                stats.totalSessions = sessions.length;
-                stats.completionRates = sessions.map(s => 
-                    this.calculateCompletionRate(s.tasks)
-                );
-                
-                stats.streakDays = this.calculateStreak();
-                stats.productiveHours = this.calculateProductiveHours();
-                stats.taskStats = this.calculateTaskStats();
-                stats.focusScores = sessions.map(s => s.focusScore);
-
-                this.updateUI();
-            },
-
-            // Save to LocalStorage
-            save() {
-                localStorage.setItem('studyAnalytics', JSON.stringify(this.data));
-            },
-
-            // Reset Statistics
-            reset() {
-                if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
-                    this.data = {
-                        sessions: [],
-                        achievements: [],
-                        stats: {
-                            totalTime: 0,
-                            totalSessions: 0,
-                            completionRates: [],
-                            streakDays: 0,
-                            productiveHours: Array(24).fill(0),
-                            taskStats: {},
-                            breakPatterns: [],
-                            focusScores: []
-                        }
-                    };
-                    this.save();
-                    this.updateUI();
-                }
-            }
+        // Global state
+        let state = {
+            mode: null,
+            darkMode: localStorage.getItem('darkMode') === 'true',
+            tasks: [],
+            currentTask: 0,
+            timer: null,
+            startTime: null,
+            totalTime: 0,
+            elapsedTime: 0,
+            paused: true,
+            taskTimes: {},
+            breakMode: null,
+            nextBreak: null,
+            nextReminder: Date.now() + 30 * 60 * 1000,
+            nextMealReminder: Date.now() + 2 * 60 * 1000
         };
 
-        // Chart Management
-        const ChartManager = {
-            charts: {},
-
-            initCharts() {
-                this.createDailyPatternChart();
-                this.createFocusDistributionChart();
-                this.createProductivityTrendChart();
-            },
-
-            createDailyPatternChart() {
-                const ctx = document.getElementById('dailyPatternChart').getContext('2d');
-                this.charts.dailyPattern = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                        datasets: [{
-                            label: 'Study Hours',
-                            data: this.getDailyPatternData(),
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: document.body.classList.contains('dark') ? 
-                                        'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                                }
-                            }
-                        }
-                    }
-                });
-            },
-
-            createFocusDistributionChart() {
-                const ctx = document.getElementById('focusDistributionChart').getContext('2d');
-                this.charts.focusDistribution = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['High Focus', 'Medium Focus', 'Low Focus'],
-                        datasets: [{
-                            data: this.getFocusDistributionData(),
-                            backgroundColor: [
-                                '#10B981',
-                                '#FBBF24',
-                                '#EF4444'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: document.body.classList.contains('dark') ? '#fff' : '#000'
-                                }
-                            }
-                        }
-                    }
-                });
-            },
-
-            getDailyPatternData() {
-                const sessions = Analytics.data.sessions;
-                const dailyHours = Array(7).fill(0);
-                
-                sessions.forEach(session => {
-                    const day = new Date(session.date).getDay();
-                    dailyHours[day] += session.duration / (1000 * 60 * 60); // Convert to hours
-                });
-
-                return dailyHours;
-            },
-
-            getFocusDistributionData() {
-                const focusScores = Analytics.data.stats.focusScores;
-                let high = 0, medium = 0, low = 0;
-
-                focusScores.forEach(score => {
-                    if (score >= 80) high++;
-                    else if (score >= 50) medium++;
-                    else low++;
-                });
-
-                return [high, medium, low];
-            },
-
-            updateCharts() {
-                Object.values(this.charts).forEach(chart => chart.update());
-            }
-        };
-
-        // Achievement System
-        const AchievementSystem = {
-            achievements: [
-                {
-                    id: 'first_hour',
-                    title: 'First Hour',
-                    description: 'Complete your first hour of studying',
-                    icon: '⏰',
-                    condition: (stats) => stats.totalTime >= 3600000
-                },
-                {
-                    id: 'focus_master',
-                    title: 'Focus Master',
-                    description: 'Achieve 90%+ focus score in a session',
-                    icon: '🎯',
-                    condition: (stats) => Math.max(...stats.focusScores) >= 90
-                },
-                {
-                    id: 'consistent_learner',
-                    title: 'Consistent Learner',
-                    description: 'Maintain a 7-day study streak',
-                    icon: '🔥',
-                    condition: (stats) => stats.streakDays >= 7
-                },
-                {
-                    id: 'task_champion',
-                    title: 'Task Champion',
-                    description: 'Complete 50 tasks',
-                    icon: '✅',
-                    condition: (stats) => Object.values(stats.taskStats)
-                        .reduce((acc, stat) => acc + stat.completed, 0) >= 50
-                },
-                {
-                    id: 'marathon_student',
-                    title: 'Marathon Student',
-                    description: 'Study for 4 hours in a single session',
-                    icon: '🏃',
-                    condition: (session) => session.duration >= 4 * 60 * 60 * 1000
-                }
-            ],
-
-            checkAchievements(session) {
-                const stats = Analytics.data.stats;
-                let newAchievements = [];
-
-                this.achievements.forEach(achievement => {
-                    if (!Analytics.data.achievements.includes(achievement.id)) {
-                        if (achievement.condition(stats) || 
-                            (achievement.condition(session) && achievement.condition(stats))) {
-                            Analytics.data.achievements.push(achievement.id);
-                            newAchievements.push(achievement);
-                        }
-                    }
-                });
-
-                if (newAchievements.length > 0) {
-                    this.showAchievementNotifications(newAchievements);
-                }
-            },
-
-            showAchievementNotifications(achievements) {
-                achievements.forEach(achievement => {
-                    alertify.success(`
-                        <div class="flex items-center">
-                            <span class="text-2xl mr-2">${achievement.icon}</span>
-                            <div>
-                                <div class="font-bold">${achievement.title}</div>
-                                <div class="text-sm">${achievement.description}</div>
-                            </div>
-                        </div>
-                    `, 5);
-                });
-            },
-
-            renderAchievements() {
-                const container = document.getElementById('achievementProgress');
-                if (!container) return;
-
-                container.innerHTML = this.achievements.map(achievement => `
-                    <div class="achievement-card ${Analytics.data.achievements.includes(achievement.id) ? 
-                        'bg-green-50 dark:bg-green-900' : 'bg-gray-50 dark:bg-gray-800'} 
-                        rounded-lg p-4 flex items-center">
-                        <span class="text-3xl mr-3">${achievement.icon}</span>
-                        <div>
-                            <h4 class="font-semibold text-gray-800 dark:text-white">${achievement.title}</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">${achievement.description}</p>
-                        </div>
-                        ${Analytics.data.achievements.includes(achievement.id) ? 
-                            '<span class="ml-auto text-green-500">✓</span>' : ''}
-                    </div>
-                `).join('');
-            }
-        };
-
-        // Productivity Insights
-        const ProductivityInsights = {
-            generateInsights() {
-                const stats = Analytics.data.stats;
-                const insights = [];
-
-                // Most productive time
-                const bestHour = stats.productiveHours.indexOf(Math.max(...stats.productiveHours));
-                insights.push({
-                    type: 'optimal_time',
-                    icon: '⏰',
-                    title: 'Best Study Time',
-                    message: `You're most productive at ${bestHour}:00`
-                });
-
-                // Break pattern analysis
-                const avgBreakTime = stats.breakPatterns.reduce((acc, br) => acc + br.duration, 0) / 
-                                   stats.breakPatterns.length;
-                insights.push({
-                    type: 'break_pattern',
-                    icon: '☕',
-                    title: 'Break Pattern',
-                    message: `Average break duration: ${Math.round(avgBreakTime / 60000)} minutes`
-                });
-
-                return insights;
-            },
-
-            renderInsights() {
-                const insights = this.generateInsights();
-                const container = document.getElementById('productiveTimeStats');
-                if (!container) return;
-
-                container.innerHTML = insights.map(insight => `
-                    <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <span class="text-2xl mr-3">${insight.icon}</span>
-                        <div>
-                            <h5 class="font-medium text-gray-800 dark:text-white">${insight.title}</h5>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">${insight.message}</p>
-                        </div>
-                    </div>
-                `).join('');
-            }
-        };
-
-        // Session Management
-        const SessionManager = {
-            currentSession: null,
-
-            initSession(mode, tasks, breakMode) {
-                this.currentSession = {
-                    id: Date.now(),
-                    mode,
-                    tasks,
-                    breakMode,
-                    startTime: null,
-                    elapsedTime: 0,
-                    totalTime: mode === 'timer' ? state.totalTime : 0,
-                    paused: true,
-                    breaks: [],
-                    focusScore: 100,
-                    lastPauseTime: null,
-                    distractionCount: 0
-                };
-
-                this.updateUI();
-                return this.currentSession;
-            },
-
-            startSession() {
-                if (!this.currentSession) return;
-                
-                this.currentSession.startTime = Date.now() - this.currentSession.elapsedTime;
-                this.currentSession.paused = false;
-                this.currentSession.lastPauseTime = null;
-
-                // Start focus monitoring
-                this.monitorFocus();
-                
-                // Update UI
-                this.updateUI();
-                this.startTimer();
-            },
-
-            pauseSession() {
-                if (!this.currentSession || this.currentSession.paused) return;
-
-                this.currentSession.paused = true;
-                this.currentSession.lastPauseTime = Date.now();
-                this.currentSession.elapsedTime = Date.now() - this.currentSession.startTime;
-
-                // Record break
-                this.currentSession.breaks.push({
-                    type: 'manual',
-                    startTime: Date.now(),
-                    duration: 0
-                });
-
-                // Update UI
-                this.updateUI();
-                this.stopTimer();
-            },
-
-            resumeSession() {
-                if (!this.currentSession || !this.currentSession.paused) return;
-
-                // Calculate break duration
-                if (this.currentSession.lastPauseTime) {
-                    const lastBreak = this.currentSession.breaks[this.currentSession.breaks.length - 1];
-                    if (lastBreak) {
-                        lastBreak.duration = Date.now() - lastBreak.startTime;
-                    }
-                }
-
-                // Adjust start time to maintain accurate elapsed time
-                this.currentSession.startTime = Date.now() - this.currentSession.elapsedTime;
-                this.currentSession.paused = false;
-                this.currentSession.lastPauseTime = null;
-
-                // Update UI
-                this.updateUI();
-                this.startTimer();
-            },
-
-            resetSession() {
-                if (!confirm('Are you sure you want to reset the current session? All progress will be lost.')) {
-                    return;
-                }
-
-                if (this.currentSession) {
-                    this.stopTimer();
-                    this.currentSession.elapsedTime = 0;
-                    this.currentSession.startTime = null;
-                    this.currentSession.paused = true;
-                    this.currentSession.breaks = [];
-                    this.currentSession.focusScore = 100;
-                    this.currentSession.tasks.forEach(task => {
-                        task.completed = false;
-                        task.subtasks.forEach(st => st.completed = false);
-                    });
-                }
-
-                this.updateUI();
-            },
-
-            completeSession() {
-                if (!this.currentSession) return;
-
-                this.stopTimer();
-                
-                // Calculate final stats
-                const finalStats = {
-                    duration: this.currentSession.elapsedTime,
-                    breaks: this.currentSession.breaks,
-                    focusScore: this.currentSession.focusScore,
-                    completionRate: this.calculateCompletionRate(),
-                    tasks: this.currentSession.tasks
-                };
-
-                // Save to analytics
-                Analytics.saveSession({
-                    ...this.currentSession,
-                    ...finalStats
-                });
-
-                // Generate report
-                this.generateReport(finalStats);
-
-                // Check achievements
-                AchievementSystem.checkAchievements({
-                    duration: finalStats.duration,
-                    focusScore: finalStats.focusScore,
-                    completionRate: finalStats.completionRate
-                });
-
-                // Clear current session
-                this.currentSession = null;
-
-                // Show report view
-                showView('reportView');
-            },
-
-            startTimer() {
-                if (state.timer) {
-                    clearInterval(state.timer);
-                }
-                state.timer = setInterval(() => this.updateTimer(), 1000);
-            },
-
-            stopTimer() {
-                if (state.timer) {
-                    clearInterval(state.timer);
-                    state.timer = null;
-                }
-            },
-
-            updateTimer() {
-                if (!this.currentSession || this.currentSession.paused) return;
-
-                const now = Date.now();
-                this.currentSession.elapsedTime = now - this.currentSession.startTime;
-
-                // Update time display
-                this.updateTimeDisplay();
-
-                // Check for scheduled breaks
-                this.checkForScheduledBreak();
-
-                // Update focus score based on session duration
-                this.updateFocusScore();
-
-                // Check for session completion (if timer mode)
-                if (this.currentSession.mode === 'timer' && 
-                    this.currentSession.elapsedTime >= this.currentSession.totalTime) {
-                    this.handleTimerCompletion();
-                }
-            },
-
-            updateTimeDisplay() {
-                const timeDisplay = document.getElementById('timeDisplay');
-                if (!timeDisplay) return;
-
-                const timeToShow = this.currentSession.mode === 'timer' 
-                    ? Math.max(0, this.currentSession.totalTime - this.currentSession.elapsedTime)
-                    : this.currentSession.elapsedTime;
-
-                timeDisplay.textContent = this.formatTime(timeToShow);
-
-                // Update progress bar
-                const progress = document.getElementById('timeProgress');
-                if (progress && this.currentSession.mode === 'timer') {
-                    const percentage = Math.min(100, 
-                        (this.currentSession.elapsedTime / this.currentSession.totalTime) * 100);
-                    progress.style.width = `${percentage}%`;
-                }
-            },
-
-            formatTime(ms) {
-                const hours = Math.floor(ms / (1000 * 60 * 60));
-                const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            },
-
-            checkForScheduledBreak() {
-                if (!this.currentSession.breakMode || this.currentSession.breakMode === 'none') return;
-
-                const workDuration = this.currentSession.breakMode === 'pomodoro' ? 25 : 50;
-                const breakDuration = this.currentSession.breakMode === 'pomodoro' ? 5 : 10;
-
-                const elapsedMinutes = this.currentSession.elapsedTime / (1000 * 60);
-                const cyclePosition = elapsedMinutes % (workDuration + breakDuration);
-
-                if (cyclePosition >= workDuration && !this.currentSession.paused) {
-                    this.startBreak(breakDuration);
-                }
-            },
-
-            startBreak(duration) {
-                this.pauseSession();
-                
-                alertify.alert('Break Time!', 
-                    `Time for a ${duration} minute break! Take a rest and stretch.`,
-                    () => {
-                        setTimeout(() => {
-                            if (this.currentSession && this.currentSession.paused) {
-                                this.resumeSession();
-                            }
-                        }, duration * 60 * 1000);
-                    }
-                );
-            },
-
-            updateFocusScore() {
-                if (!this.currentSession) return;
-
-                // Base score decay
-                const elapsedMinutes = this.currentSession.elapsedTime / (1000 * 60);
-                const baseDecay = Math.floor(elapsedMinutes / 30) * 5; // -5 points every 30 minutes
-
-                // Break bonus
-                const breakBonus = this.currentSession.breaks.reduce((bonus, breakItem) => {
-                    const breakMinutes = breakItem.duration / (1000 * 60);
-                    return bonus + (breakMinutes >= 5 ? 10 : 5); // +10 for proper breaks, +5 for short breaks
-                }, 0);
-
-                // Distraction penalty
-                const distractionPenalty = this.currentSession.distractionCount * 2;
-
-                // Calculate final score
-                this.currentSession.focusScore = Math.max(0, Math.min(100,
-                    100 - baseDecay + breakBonus - distractionPenalty
-                ));
-
-                // Update UI
-                const focusScoreElement = document.getElementById('focusScore');
-                if (focusScoreElement) {
-                    focusScoreElement.textContent = `${this.currentSession.focusScore}%`;
-                }
-            },
-
-            handleTimerCompletion() {
-                this.stopTimer();
-
-                if (this.calculateCompletionRate() < 100) {
-                    alertify.confirm(
-                        'Time\'s Up!',
-                        'You still have incomplete tasks. Would you like to extend the session?',
-                        () => {
-                            this.currentSession.totalTime += 15 * 60 * 1000; // Add 15 minutes
-                            this.startTimer();
-                        },
-                        () => {
-                            this.completeSession();
-                        }
-                    );
-                } else {
-                    this.completeSession();
-                }
-            },
-
-            calculateCompletionRate() {
-                if (!this.currentSession) return 0;
-
-                const tasks = this.currentSession.tasks;
-                const totalTasks = tasks.reduce((acc, task) => 
-                    acc + task.subtasks.length + 1, 0);
-                const completedTasks = tasks.reduce((acc, task) => 
-                    acc + (task.completed ? task.subtasks.length + 1 : 
-                        task.subtasks.filter(st => st.completed).length), 0);
-
-                return Math.round((completedTasks / totalTasks) * 100);
-            },
-
-            monitorFocus() {
-                // Track window blur events (tab switching, etc.)
-                window.addEventListener('blur', () => {
-                    if (this.currentSession && !this.currentSession.paused) {
-                        this.currentSession.distractionCount++;
-                        this.updateFocusScore();
-                    }
-                });
-
-                // Track visibility changes
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden && this.currentSession && !this.currentSession.paused) {
-                        this.currentSession.distractionCount++;
-                        this.updateFocusScore();
-                    }
-                });
-            },
-
-            generateReport(stats) {
-                const reportContent = document.getElementById('reportContent');
-                if (!reportContent) return;
-
-                const productivityScore = this.calculateProductivityScore(stats);
-                const breakAnalysis = this.analyzeBreaks(stats.breaks);
-
-                reportContent.innerHTML = `
-                    <div class="space-y-6">
-                        <!-- Summary Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="stat-card">
-                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Time</h4>
-                                <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                                    ${this.formatTime(stats.duration)}
-                                </p>
-                            </div>
-                            <div class="stat-card">
-                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Focus Score</h4>
-                                <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                                    ${stats.focusScore}%
-                                </p>
-                            </div>
-                            <div class="stat-card">
-                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Productivity</h4>
-                                <p class="text-3xl font-bold text-green-600 dark:text-green-400">
-                                    ${productivityScore}%
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Break Analysis -->
-                        <div class="card p-4">
-                            <h3 class="text-lg font-bold mb-3 text-gray-800 dark:text-white">Break Analysis</h3>
-                            <div class="space-y-2">
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    Total Breaks: ${breakAnalysis.totalBreaks}
-                                </p>
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    Average Break Duration: ${breakAnalysis.averageDuration} minutes
-                                </p>
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    Break Pattern: ${breakAnalysis.pattern}
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Task Summary -->
-                        <div class="card p-4">
-                            <h3 class="text-lg font-bold mb-3 text-gray-800 dark:text-white">Task Summary</h3>
-                            <div class="space-y-4">
-                                ${stats.tasks.map(task => `
-                                    <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="font-medium text-gray-800 dark:text-white">
-                                                ${task.title}
-                                            </span>
-                                            <span class="text-sm ${task.completed ? 
-                                                'text-green-600 dark:text-green-400' : 
-                                                'text-red-600 dark:text-red-400'}">
-                                                ${task.completed ? 'Completed' : 'Incomplete'}
-                                            </span>
-                                        </div>
-                                        ${task.subtasks.length > 0 ? `
-                                            <div class="ml-4 space-y-1">
-                                                ${task.subtasks.map(subtask => `
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-sm text-gray-600 dark:text-gray-300">
-                                                            ${subtask.title}
-                                                        </span>
-                                                        <span class="text-sm ${subtask.completed ? 
-                                                            'text-green-600 dark:text-green-400' : 
-                                                            'text-red-600 dark:text-red-400'}">
-                                                            ${subtask.completed ? '✓' : '×'}
-                                                        </span>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <!-- Suggestions -->
-                        <div class="card p-4">
-                            <h3 class="text-lg font-bold mb-3 text-gray-800 dark:text-white">
-                                Suggestions for Next Session
-                            </h3>
-                            <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-300">
-                                ${this.generateSuggestions(stats).map(suggestion => `
-                                    <li>${suggestion}</li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                `;
-            },
-
-            calculateProductivityScore(stats) {
-                const weights = {
-                    completion: 0.4,
-                    focus: 0.3,
-                    timeManagement: 0.3
-                };
-
-                const completionScore = stats.completionRate;
-                const focusScore = stats.focusScore;
-                const timeManagementScore = this.calculateTimeManagementScore(stats);
-
-                return Math.round(
-                    completionScore * weights.completion +
-                    focusScore * weights.focus +
-                    timeManagementScore * weights.timeManagement
-                );
-            },
-
-            calculateTimeManagementScore(stats) {
-                const totalBreakTime = stats.breaks.reduce((total, br) => total + br.duration, 0);
-                const effectiveWorkTime = stats.duration - totalBreakTime;
-                const idealBreakRatio = 0.2; // 20% of total time should be breaks
-                const actualBreakRatio = totalBreakTime / stats.duration;
-                
-                // Score based on how close the actual break ratio is to ideal
-                const breakScore = 100 - Math.abs(idealBreakRatio - actualBreakRatio) * 100;
-                
-                // Score based on work session length between breaks
-                const avgWorkSession = effectiveWorkTime / (stats.breaks.length + 1);
-                const idealWorkSession = 25 * 60 * 1000; // 25 minutes
-                const sessionScore = 100 - Math.min(100, Math.abs(avgWorkSession - idealWorkSession) / 
-                    (idealWorkSession) * 100);
-
-                return Math.round((breakScore + sessionScore) / 2);
-            },
-
-            analyzeBreaks(breaks) {
-                const totalBreaks = breaks.length;
-                const totalBreakTime = breaks.reduce((total, br) => total + br.duration, 0);
-                const avgDuration = Math.round(totalBreakTime / (totalBreaks * 60 * 1000) * 10) / 10;
-
-                let pattern = 'Irregular';
-                if (breaks.length >= 2) {
-                    const intervals = [];
-                    for (let i = 1; i < breaks.length; i++) {
-                        intervals.push(breaks[i].startTime - 
-                            (breaks[i-1].startTime + breaks[i-1].duration));
-                    }
-                    
-                    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-                    const variance = intervals.reduce((acc, interval) => 
-                        acc + Math.pow(interval - avgInterval, 2), 0) / intervals.length;
-                    
-                    if (variance < 5 * 60 * 1000) { // 5 minutes variance
-                        pattern = 'Consistent';
-                    } else if (variance < 15 * 60 * 1000) {
-                        pattern = 'Somewhat Regular';
-                    }
-                }
-
-                return {
-                    totalBreaks,
-                    averageDuration: avgDuration,
-                    pattern
-                };
-            },
-
-            generateSuggestions(stats) {
-                const suggestions = [];
-
-                if (stats.focusScore < 70) {
-                    suggestions.push('Consider taking more regular breaks to maintain focus');
-                }
-
-                if (stats.completionRate < 80) {
-                    suggestions.push('Try breaking down tasks into smaller, more manageable subtasks');
-                }
-
-                if (stats.breaks.length === 0) {
-                    suggestions.push('Include regular breaks in your study sessions for better productivity');
-                } else if (this.calculateTimeManagementScore(stats) < 70) {
-                    suggestions.push('Aim for more balanced work-break intervals (25 min work / 5 min break)');
-                }
-
-                return suggestions;
-            },
-
-            updateUI() {
-                this.updateTimeDisplay();
-                this.updateTaskDisplay();
-                this.updateProgressBars();
-                this.updateStatusIndicators();
-            }
-        };
-
-        // Event Handlers and App Initialization
+        // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
             initializeApp();
             attachEventListeners();
-            applyStoredTheme();
-            checkLoginStatus();
         });
 
         function initializeApp() {
-            Analytics.init();
+            // Apply saved theme
             if (state.darkMode) {
                 document.body.classList.add('dark');
+            }
+
+            // Check login status
+            const user = localStorage.getItem('user');
+            if (user) {
+                showLoggedInState(user);
             }
         }
 
         function attachEventListeners() {
-            // Theme toggle
-            document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-
-            // Login form
+            // Login with Enter key
             document.getElementById('username')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') login();
-            });
-
-            // Break mode selector
-            document.getElementById('breakMode')?.addEventListener('change', (e) => {
-                const customSettings = document.getElementById('customBreakSettings');
-                if (customSettings) {
-                    customSettings.classList.toggle('hidden', e.target.value !== 'custom');
+                if (e.key === 'Enter') {
+                    login();
                 }
             });
-
-            // Window focus events for distraction tracking
-            window.addEventListener('blur', () => {
-                if (SessionManager.currentSession && !SessionManager.currentSession.paused) {
-                    SessionManager.currentSession.distractionCount++;
-                    alertify.warning('Stay focused! Switching tasks reduces productivity.');
-                }
-            });
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', handleKeyboardShortcuts);
         }
 
-        function handleKeyboardShortcuts(e) {
-            // Only handle shortcuts if a session is active
-            if (!SessionManager.currentSession) return;
-
-            // Space bar: toggle timer
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                toggleTimer();
-            }
-
-            // Ctrl/Cmd + B: quick break
-            if ((e.ctrlKey || e.metaKey) && e.code === 'KeyB') {
-                e.preventDefault();
-                if (!SessionManager.currentSession.paused) {
-                    SessionManager.startBreak(5);
-                }
-            }
-        }
-
-        function toggleTheme() {
-            state.darkMode = !state.darkMode;
-            document.body.classList.toggle('dark');
-            localStorage.setItem('darkMode', state.darkMode);
-            
-            // Update charts if they exist
-            if (ChartManager.charts) {
-                ChartManager.updateCharts();
-            }
-        }
-
-        function applyStoredTheme() {
-            const storedTheme = localStorage.getItem('darkMode');
-            if (storedTheme === 'true') {
-                document.body.classList.add('dark');
-                state.darkMode = true;
-            }
-        }
-
+        // Authentication functions
         function login() {
             const username = document.getElementById('username').value.trim();
             if (!username) {
@@ -1646,37 +323,32 @@
 
             localStorage.setItem('user', username);
             showLoggedInState(username);
-            Analytics.init(); // Load user's analytics data
         }
 
         function showLoggedInState(username) {
-            // Update UI elements
             document.getElementById('userInfo').textContent = `Welcome, ${username}`;
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
-            document.getElementById('analyticsBtn').classList.remove('hidden');
             document.getElementById('modeSelection').classList.remove('hidden');
         }
 
-        function checkLoginStatus() {
-            const user = localStorage.getItem('user');
-            if (user) {
-                showLoggedInState(user);
-            }
-        }
-
         function logout() {
-            if (SessionManager.currentSession) {
-                if (!confirm('You have an active session. Are you sure you want to logout? Your progress will be lost.')) {
-                    return;
-                }
+            if (state.timer) {
+                clearInterval(state.timer);
             }
-            
             localStorage.removeItem('user');
             location.reload();
         }
 
+        // Theme toggle
+        function toggleTheme() {
+            state.darkMode = !state.darkMode;
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', state.darkMode);
+        }
+
+        // Mode selection
         function selectMode(mode) {
             state.mode = mode;
             hideAllViews();
@@ -1686,16 +358,91 @@
             }
         }
 
+        // Task management
+        function addMainTask() {
+            const taskId = Date.now();
+            state.tasks.push({
+                id: taskId,
+                title: '',
+                subtasks: [],
+                completed: false
+            });
+            renderTaskList();
+        }
+
+        function addSubtask(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks.push({
+                    id: Date.now(),
+                    title: '',
+                    completed: false
+                });
+                renderTaskList();
+            }
+        }
+
+        function updateTaskTitle(taskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.title = value;
+            }
+        }
+
+        function updateSubtaskTitle(taskId, subtaskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.title = value;
+                }
+            }
+        }
+
+        function renderTaskList() {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+
+            taskList.innerHTML = state.tasks.map((task, index) => `
+                <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
+                    <input
+                        type="text"
+                        placeholder="Task ${index + 1}"
+                        value="${task.title}"
+                        onchange="updateTaskTitle(${task.id}, this.value)"
+                        class="w-full px-4 py-2 mb-3 border rounded focus:outline-none focus:border-blue-500 
+                               dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    >
+                    <div class="ml-4 space-y-2">
+                        ${task.subtasks.map((subtask, subIndex) => `
+                            <input
+                                type="text"
+                                placeholder="Subtask ${subIndex + 1}"
+                                value="${subtask.title}"
+                                onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
+                                class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500 
+                                       dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            >
+                        `).join('')}
+                    </div>
+                    <button onclick="addSubtask(${task.id})" 
+                        class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                        Add Subtask
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Session management
         function startSession() {
-            // Validate inputs
             if (state.mode === 'timer') {
                 const hours = parseInt(document.getElementById('hours').value) || 0;
                 const minutes = parseInt(document.getElementById('minutes').value) || 0;
-                if (hours === 0 && minutes === 0) {
+                state.totalTime = (hours * 60 + minutes) * 60 * 1000;
+                if (state.totalTime <= 0) {
                     alertify.error('Please set a valid time duration');
                     return;
                 }
-                state.totalTime = (hours * 60 + minutes) * 60 * 1000;
             }
 
             if (state.tasks.length === 0) {
@@ -1703,110 +450,329 @@
                 return;
             }
 
-            // Initialize session
-            const breakMode = document.getElementById('breakMode').value;
-            const session = SessionManager.initSession(state.mode, state.tasks, breakMode);
-
-            // Update UI
+            state.breakMode = document.getElementById('breakMode').value;
             hideAllViews();
             document.getElementById('sessionView').classList.remove('hidden');
-            
-            // Start session if auto-start is enabled
-            if (document.getElementById('autoStart')?.checked) {
-                SessionManager.startSession();
-            }
+            renderTaskDisplay();
+            updateProgress();
+        }
+
+        function renderTaskDisplay() {
+            const taskDisplay = document.getElementById('taskDisplay');
+            if (!taskDisplay) return;
+
+            taskDisplay.innerHTML = state.tasks.map(task => `
+                <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
+                    <div class="flex items-center mb-3">
+                        <input type="checkbox" 
+                            ${task.completed ? 'checked' : ''} 
+                            onchange="toggleTaskCompletion(${task.id})"
+                            class="w-5 h-5 mr-3">
+                        <span class="${task.completed ? 'line-through' : ''} text-lg dark:text-white">
+                            ${task.title}
+                        </span>
+                    </div>
+                    <div class="ml-8 space-y-2">
+                        ${task.subtasks.map(subtask => `
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                    ${subtask.completed ? 'checked' : ''} 
+                                    onchange="toggleTaskCompletion(${task.id}, ${subtask.id})"
+                                    class="w-4 h-4 mr-3">
+                                <span class="${subtask.completed ? 'line-through' : ''} dark:text-white">
+                                    ${subtask.title}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
         }
 
         function toggleTimer() {
-            if (!SessionManager.currentSession) return;
-
-            if (SessionManager.currentSession.paused) {
-                SessionManager.resumeSession();
+            if (state.paused) {
+                // Starting/Resuming timer
+                if (!state.startTime) {
+                    state.startTime = Date.now();
+                } else {
+                    // Adjust start time when resuming
+                    state.startTime = Date.now() - state.elapsedTime;
+                }
+                state.timer = setInterval(updateTimer, 1000);
+                document.getElementById('startPauseBtn').textContent = 'Pause';
+                document.getElementById('startPauseBtn').classList.replace('bg-green-500', 'bg-yellow-500');
             } else {
-                SessionManager.pauseSession();
+                // Pausing timer
+                clearInterval(state.timer);
+                state.elapsedTime = Date.now() - state.startTime;
+                document.getElementById('startPauseBtn').textContent = 'Resume';
+                document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
             }
+            state.paused = !state.paused;
+        }
+
+        function updateTimer() {
+            if (!state.paused) {
+                const now = Date.now();
+                state.elapsedTime = now - state.startTime;
+                
+                if (state.mode === 'timer') {
+                    const remainingTime = state.totalTime - state.elapsedTime;
+                    
+                    if (remainingTime <= 0) {
+                        clearInterval(state.timer);
+                        handleTimerComplete();
+                        return;
+                    }
+                    
+                    document.getElementById('timeDisplay').textContent = formatTime(remainingTime);
+                    const progress = ((state.totalTime - remainingTime) / state.totalTime) * 100;
+                    document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
+                } else {
+                    document.getElementById('timeDisplay').textContent = formatTime(state.elapsedTime);
+                }
+
+                checkForBreak();
+            }
+        }
+
+        function handleTimerComplete() {
+            if (!allTasksCompleted()) {
+                alertify.confirm(
+                    'Time\'s Up!',
+                    'You still have incomplete tasks. Would you like to extend the timer?',
+                    function() {
+                        state.totalTime += 15 * 60 * 1000; // Add 15 minutes
+                        state.timer = setInterval(updateTimer, 1000);
+                    },
+                    function() {
+                        completeSession();
+                    }
+                );
+            } else {
+                completeSession();
+            }
+        }
+
+        function checkForBreak() {
+            if (state.breakMode === 'none' || state.paused) return;
+
+            const workTime = state.breakMode === 'pomodoro' ? 25 * 60 * 1000 : 50 * 60 * 1000;
+            const breakTime = state.breakMode === 'pomodoro' ? 5 * 60 * 1000 : 10 * 60 * 1000;
+
+            if (!state.nextBreak) {
+                state.nextBreak = state.startTime + workTime;
+            }
+
+            if (Date.now() >= state.nextBreak) {
+                state.nextBreak = Date.now() + workTime + breakTime;
+                alertify.alert('Break Time!', 
+                    `Time for a ${state.breakMode === 'pomodoro' ? '5' : '10'} minute break!`,
+                    function() {
+                        toggleTimer(); // Pause the timer
+                    }
+                );
+            }
+        }
+
+        function toggleTaskCompletion(taskId, subtaskId = null) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (subtaskId === null) {
+                task.completed = !task.completed;
+                task.subtasks.forEach(st => st.completed = task.completed);
+            } else {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    task.completed = task.subtasks.every(st => st.completed);
+                }
+            }
+
+            renderTaskDisplay();
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = state.tasks.reduce((acc, task) => {
+                return acc + (task.completed ? task.subtasks.length + 1 : 
+                    task.subtasks.filter(st => st.completed).length);
+            }, 0);
+
+            const progress = (completedTasks / totalTasks) * 100;
+            document.getElementById('taskProgress').style.width = `${progress}%`;
+        }
+
+        function allTasksCompleted() {
+            return state.tasks.every(task => task.completed);
         }
 
         function resetSession() {
-            SessionManager.resetSession();
+            if (!confirm('Are you sure you want to reset the session? All progress will be lost.')) {
+                return;
+            }
+
+            clearInterval(state.timer);
+            state.elapsedTime = 0;
+            state.startTime = null;
+            state.paused = true;
+            state.nextBreak = null;
+            state.tasks.forEach(task => {
+                task.completed = false;
+                task.subtasks.forEach(st => st.completed = false);
+            });
+
+            document.getElementById('timeDisplay').textContent = '00:00:00';
+            document.getElementById('timeProgress').style.width = '0%';
+            document.getElementById('taskProgress').style.width = '0%';
+            document.getElementById('startPauseBtn').textContent = 'Start';
+            document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+
+            renderTaskDisplay();
         }
 
         function completeSession() {
-            SessionManager.completeSession();
-        }
-
-        function hideAllViews() {
-            const views = [
-                'loginForm',
-                'modeSelection',
-                'setupForm',
-                'sessionView',
-                'reportView',
-                'analyticsView'
-            ];
-            
-            views.forEach(view => {
-                document.getElementById(view)?.classList.add('hidden');
-            });
-        }
-
-        function showView(viewId) {
+            clearInterval(state.timer);
             hideAllViews();
-            document.getElementById(viewId)?.classList.remove('hidden');
+            document.getElementById('reportView').classList.remove('hidden');
+            generateReport();
+            saveSessionData();
         }
 
-        function toggleAnalyticsView() {
-            const stats = Analytics.getStats();
-            if (!stats) {
-                alertify.error('No session data available yet');
-                return;
-            }
+        function generateReport() {
+            const completionRate = calculateCompletionRate();
+            const totalTime = state.elapsedTime;
+            
+            const reportContent = `
+                <div class="space-y-6 dark:text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="stat-card">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Time</h4>
+                            <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                                ${formatTime(totalTime)}
+                            </p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Completion Rate</h4>
+                            <p class="text-3xl font-bold text-green-600 dark:text-green-400">
+                                ${completionRate}%
+                            </p>
+                        </div>
+                    </div>
 
-            showView('analyticsView');
-            ChartManager.initCharts();
-            ProductivityInsights.renderInsights();
-            AchievementSystem.renderAchievements();
+                    <div class="card p-4">
+                        <h3 class="text-xl font-bold mb-4">Task Summary</h3>
+                        <div class="space-y-4">
+                            ${state.tasks.map(task => `
+                                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-medium">${task.title}</span>
+                                        <span class="${task.completed ? 'text-green-500' : 'text-red-500'}">
+                                            ${task.completed ? '✓ Completed' : '× Incomplete'}
+                                        </span>
+                                    </div>
+                                    ${task.subtasks.length > 0 ? `
+                                        <div class="ml-4 space-y-1">
+                                            ${task.subtasks.map(subtask => `
+                                                <div class="flex items-center justify-between text-sm">
+                                                    <span>${subtask.title}</span>
+                                                    <span class="${subtask.completed ? 'text-green-500' : 'text-red-500'}">
+                                                        ${subtask.completed ? '✓' : '×'}
+                                                    </span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('reportContent').innerHTML = reportContent;
         }
 
-        function resetStatistics() {
-            if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
-                Analytics.reset();
-                alertify.success('Statistics have been reset');
-                showView('modeSelection');
-            }
+        function saveSessionData() {
+            const sessionData = {
+                date: new Date().toISOString(),
+                duration: state.elapsedTime,
+                mode: state.mode,
+                tasks: state.tasks.map(task => ({
+                    title: task.title,
+                    completed: task.completed,
+                    subtasks: task.subtasks.map(st => ({
+                        title: st.title,
+                        completed: st.completed
+                    }))
+                })),
+                completionRate: calculateCompletionRate()
+            };
+
+            let history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
+            history.push(sessionData);
+            localStorage.setItem('sessionHistory', JSON.stringify(history));
         }
 
-        function exportAnalytics(format) {
-            const stats = Analytics.getStats();
-            if (!stats) {
-                alertify.error('No data to export');
-                return;
-            }
+        function calculateCompletionRate() {
+            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = state.tasks.reduce((acc, task) => {
+                return acc + (task.completed ? task.subtasks.length + 1 : 
+                    task.subtasks.filter(st => st.completed).length);
+            }, 0);
 
-            if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Add content to PDF
-                doc.setFont('helvetica');
-                doc.setFontSize(20);
-                doc.text('Study Timer Analytics Report', 20, 20);
-                
-                doc.setFontSize(12);
-                doc.text(`Total Study Time: ${formatTime(stats.totalTime)}`, 20, 40);
-                doc.text(`Total Sessions: ${stats.totalSessions}`, 20, 50);
-                doc.text(`Average Completion Rate: ${stats.averageCompletionRate.toFixed(1)}%`, 20, 60);
-                
-                doc.save('study-analytics.pdf');
-                alertify.success('Analytics exported successfully');
-            }
+            return Math.round((completedTasks / totalTasks) * 100);
         }
 
+        function startNewSession() {
+            // Reset state
+            state = {
+                ...state,
+                mode: null,
+                tasks: [],
+                currentTask: 0,
+                timer: null,
+                startTime: null,
+                totalTime: 0,
+                elapsedTime: 0,
+                paused: true,
+                taskTimes: {},
+                breakMode: null,
+                nextBreak: null,
+                nextReminder: Date.now() + 30 * 60 * 1000,
+                nextMealReminder: Date.now() + 2 * 60 * 1000
+            };
+
+            // Reset UI
+            document.getElementById('timeDisplay').textContent = '00:00:00';
+            document.getElementById('timeProgress').style.width = '0%';
+            document.getElementById('taskProgress').style.width = '0%';
+            document.getElementById('startPauseBtn').textContent = 'Start';
+            document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+
+            // Show mode selection
+            hideAllViews();
+            document.getElementById('modeSelection').classList.remove('hidden');
+        }
+
+        // Utility functions
         function formatTime(ms) {
             const hours = Math.floor(ms / (1000 * 60 * 60));
             const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((ms % (1000 * 60)) / 1000);
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function hideAllViews() {
+            const views = ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'reportView'];
+            views.forEach(view => {
+                const element = document.getElementById(view);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
         }
     </script>
 </body>
