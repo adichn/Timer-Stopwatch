@@ -267,23 +267,178 @@
     </div>
 
     <script>
-        // Global state
-        let state = {
-            mode: null,
-            darkMode: localStorage.getItem('darkMode') === 'true',
-            tasks: [],
-            currentTask: 0,
-            timer: null,
-            startTime: null,
-            totalTime: 0,
-            elapsedTime: 0,
-            paused: true,
-            taskTimes: {},
-            breakMode: null,
-            nextBreak: null,
-            nextReminder: Date.now() + 30 * 60 * 1000,
-            nextMealReminder: Date.now() + 2 * 60 * 1000
-        };
+
+        // Add this at the beginning of your JavaScript section, right after the Analytics object
+let state = {
+    mode: null,
+    darkMode: localStorage.getItem('darkMode') === 'true',
+    tasks: [],
+    currentTask: 0,
+    timer: null,
+    startTime: null,
+    totalTime: 0,
+    elapsedTime: 0,
+    paused: true,
+    taskTimes: {},
+    breakMode: null,
+    nextBreak: null,
+    nextReminder: Date.now() + 30 * 60 * 1000,
+    nextMealReminder: Date.now() + 2 * 60 * 1000
+};
+
+// Task management functions
+function addMainTask() {
+    const taskId = Date.now();
+    state.tasks.push({
+        id: taskId,
+        title: '',
+        subtasks: [],
+        completed: false
+    });
+    renderTaskList();
+}
+
+function updateTaskTitle(taskId, value) {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (task) {
+        task.title = value;
+    }
+}
+
+function addSubtask(taskId) {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (task) {
+        task.subtasks.push({
+            id: Date.now(),
+            title: '',
+            completed: false
+        });
+        renderTaskList();
+    }
+}
+
+function updateSubtaskTitle(taskId, subtaskId, value) {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (task) {
+        const subtask = task.subtasks.find(st => st.id === subtaskId);
+        if (subtask) {
+            subtask.title = value;
+        }
+    }
+}
+
+function renderTaskList() {
+    const taskList = document.getElementById('taskList');
+    if (!taskList) return;
+
+    taskList.innerHTML = state.tasks.map((task, index) => `
+        <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
+            <input
+                type="text"
+                placeholder="Task ${index + 1}"
+                value="${task.title}"
+                onchange="updateTaskTitle(${task.id}, this.value)"
+                class="w-full px-4 py-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
+                       dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            >
+            <div class="ml-4 space-y-2">
+                ${task.subtasks.map((subtask, subIndex) => `
+                    <input
+                        type="text"
+                        placeholder="Subtask ${subIndex + 1}"
+                        value="${subtask.title}"
+                        onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
+                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
+                               dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    >
+                `).join('')}
+            </div>
+            <button onclick="addSubtask(${task.id})" 
+                class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                Add Subtask
+            </button>
+        </div>
+    `).join('');
+}
+
+// View management
+function hideAllViews() {
+    ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'reportView', 'analyticsView']
+        .forEach(viewId => {
+            const element = document.getElementById(viewId);
+            if (element) {
+                element.classList.add('hidden');
+            }
+        });
+}
+
+function showView(viewId) {
+    hideAllViews();
+    const view = document.getElementById(viewId);
+    if (view) {
+        view.classList.remove('hidden');
+    }
+}
+
+// Event handlers for buttons
+function toggleAchievementsView() {
+    const achievements = document.getElementById('achievementProgress');
+    if (achievements) {
+        AchievementSystem.renderAchievements();
+        showView('analyticsView');
+    }
+}
+
+function toggleSettingsView() {
+    // Implement settings view if needed
+    alertify.message('Settings feature coming soon!');
+}
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    attachEventListeners();
+});
+
+function initializeApp() {
+    // Apply saved theme
+    if (state.darkMode) {
+        document.body.classList.add('dark');
+    }
+
+    // Check login status
+    const user = localStorage.getItem('user');
+    if (user) {
+        showLoggedInState(user);
+    }
+
+    // Initialize analytics
+    Analytics.init();
+
+    // Show appropriate view
+    if (!user) {
+        showView('loginForm');
+    } else {
+        showView('modeSelection');
+    }
+}
+
+function attachEventListeners() {
+    // Make sure all buttons are properly attached to their event handlers
+    document.getElementById('analyticsBtn')?.addEventListener('click', toggleAnalyticsView);
+    document.getElementById('achievementsBtn')?.addEventListener('click', toggleAchievementsView);
+    document.getElementById('settingsBtn')?.addEventListener('click', toggleSettingsView);
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+    // Break mode change handler
+    document.getElementById('breakMode')?.addEventListener('change', (e) => {
+        const customSettings = document.getElementById('customBreakSettings');
+        if (customSettings) {
+            customSettings.classList.toggle('hidden', e.target.value !== 'custom');
+        }
+    });
+}
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
