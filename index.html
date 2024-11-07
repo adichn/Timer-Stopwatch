@@ -668,10 +668,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize app settings
             initializeApp();
     
-            // Check user login persistence and show appropriate view
             if (localStorage.getItem('user')) {
                 showLoggedInState(localStorage.getItem('user'));
                 showView('modeSelection');
@@ -679,16 +677,20 @@
                 showView('loginForm');
             }
     
-            // Event listeners for main buttons
+            // Attach event listeners to main buttons
             document.getElementById('analyticsBtn').addEventListener('click', toggleAnalyticsView);
             document.getElementById('startPauseBtn').addEventListener('click', toggleTimer);
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('loginForm').querySelector('button').addEventListener('click', login);
-            document.getElementById('startSessionBtn').addEventListener('click', startSession);
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            document.getElementById('startSessionBtn').addEventListener('click', startSession);
     
-            // Remove custom settings and simplify break mode selection
-            document.getElementById('breakMode')?.addEventListener('change', (e) => {
+            // Attach mode selection for Timer and Stopwatch modes
+            document.getElementById('timerModeBtn').addEventListener('click', () => selectMode('timer'));
+            document.getElementById('stopwatchModeBtn').addEventListener('click', () => selectMode('stopwatch'));
+    
+            // Simplify break mode selection to remove "custom" option
+            document.getElementById('breakMode')?.addEventListener('change', () => {
                 const customSettings = document.getElementById('customBreakSettings');
                 if (customSettings) {
                     customSettings.classList.add('hidden');
@@ -696,7 +698,6 @@
             });
         });
     
-        // Application State
         let state = {
             mode: null,
             darkMode: localStorage.getItem('darkMode') === 'true',
@@ -712,7 +713,7 @@
             nextBreak: null,
         };
     
-        // Task Management Functions
+        // Task Management
         function addMainTask() {
             const taskId = Date.now();
             state.tasks.push({
@@ -722,25 +723,6 @@
                 completed: false
             });
             renderTaskList();
-        }
-    
-        function updateTaskTitle(taskId, value) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (task) {
-                task.title = value;
-            }
-        }
-    
-        function addSubtask(taskId) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (task) {
-                task.subtasks.push({
-                    id: Date.now(),
-                    title: '',
-                    completed: false
-                });
-                renderTaskList();
-            }
         }
     
         function renderTaskList() {
@@ -759,53 +741,38 @@
             `).join('');
         }
     
-        // View Management
-        function hideAllViews() {
-            ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'analyticsView'].forEach(viewId => {
-                const element = document.getElementById(viewId);
-                if (element) {
-                    element.classList.add('hidden');
+        function selectMode(mode) {
+            state.mode = mode;
+            showView('setupForm');
+    
+            const timerSetup = document.getElementById('timerSetup');
+            timerSetup.classList.toggle('hidden', mode === 'stopwatch');
+        }
+    
+        function startSession() {
+            if (state.tasks.length === 0) {
+                alertify.error("Please add at least one task.");
+                return;
+            }
+    
+            if (state.mode === 'timer') {
+                const hours = parseInt(document.getElementById('hours').value) || 0;
+                const minutes = parseInt(document.getElementById('minutes').value) || 0;
+                if (hours === 0 && minutes === 0) {
+                    alertify.error('Please set a valid time duration');
+                    return;
                 }
-            });
-        }
-    
-        function showView(viewId) {
-            hideAllViews();
-            const view = document.getElementById(viewId);
-            if (view) {
-                view.classList.remove('hidden');
+                state.totalTime = (hours * 60 + minutes) * 60 * 1000;
             }
+    
+            const breakMode = document.getElementById('breakMode').value;
+            SessionManager.initSession(state.mode, state.tasks, breakMode);
+            showView('sessionView');
+            SessionManager.startSession();
         }
     
-        // Login Persistence
-        function login() {
-            const username = document.getElementById('username').value.trim();
-            if (username) {
-                localStorage.setItem('user', username);
-                showLoggedInState(username);
-                showView('modeSelection');
-            } else {
-                alertify.error('Please enter a username');
-            }
-        }
-    
-        function showLoggedInState(username) {
-            document.getElementById('userInfo').textContent = `Welcome, ${username}`;
-            document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            document.getElementById('analyticsBtn').classList.remove('hidden');
-        }
-    
-        function logout() {
-            localStorage.removeItem('user');
-            location.reload();
-        }
-    
-        // Session Management
         const SessionManager = {
             initSession(mode, tasks, breakMode) {
-                state.mode = mode;
                 state.tasks = tasks;
                 state.breakMode = breakMode;
                 state.startTime = Date.now();
@@ -823,28 +790,14 @@
                 alertify.success("Session started!");
             },
     
-            pauseSession() {
-                if (state.timer) {
-                    clearInterval(state.timer);
-                    state.timer = null;
-                    state.paused = true;
-                    alertify.message("Session paused.");
-                }
-            },
-    
-            resumeSession() {
-                if (state.paused) {
-                    state.paused = false;
-                    state.timer = setInterval(() => this.updateTimer(), 1000);
-                    alertify.success("Session resumed!");
-                }
-            },
-    
             updateTimer() {
                 const now = Date.now();
                 state.elapsedTime = now - state.startTime;
                 document.getElementById('timeDisplay').textContent = this.formatTime(state.elapsedTime);
-                // Additional logic for managing breaks can go here
+    
+                if (state.mode === 'timer' && state.elapsedTime >= state.totalTime) {
+                    this.completeSession();
+                }
             },
     
             formatTime(ms) {
@@ -854,29 +807,27 @@
                 return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             },
     
+            completeSession() {
+                clearInterval(state.timer);
+                alertify.success("Session completed!");
+                Analytics.saveSession(state);
+                this.resetSession();
+                showView('modeSelection');
+            },
+    
             resetSession() {
-                if (state.timer) clearInterval(state.timer);
+                clearInterval(state.timer);
                 state.elapsedTime = 0;
                 state.startTime = null;
                 state.paused = true;
                 this.updateSessionUI();
             },
     
-            completeSession() {
-                if (state.timer) clearInterval(state.timer);
-                alertify.success("Session completed!");
-                Analytics.saveSession(state);  // Save session data
-                this.resetSession();
-            },
-    
             updateSessionUI() {
                 document.getElementById('timeDisplay').textContent = this.formatTime(state.elapsedTime);
-                document.getElementById('currentStreak').textContent = `${Math.floor(state.elapsedTime / 60000)} min`;
-                // Update other session UI elements as needed
             }
         };
     
-        // Analytics Management
         const Analytics = {
             data: {
                 sessions: [],
@@ -894,7 +845,7 @@
                     id: Date.now(),
                     duration: sessionData.elapsedTime,
                     tasks: sessionData.tasks,
-                    focusScore: this.calculateFocusScore(sessionData)
+                    focusScore: 100  // Placeholder
                 };
                 this.data.sessions.push(session);
                 this.data.totalStudyTime += session.duration;
@@ -909,99 +860,29 @@
             updateUI() {
                 document.getElementById('totalStudyTime').textContent = `${Math.floor(this.data.totalStudyTime / 3600000)} hrs`;
                 document.getElementById('totalSessions').textContent = this.data.sessions.length;
-            },
-    
-            calculateFocusScore(session) {
-                // Placeholder for a focus score calculation method
-                return Math.min(100, 100 - (session.paused ? 10 : 0));  // Sample logic
             }
         };
     
-        // Theme Toggle
+        // Toggle theme
         function toggleTheme() {
             state.darkMode = !state.darkMode;
             document.body.classList.toggle('dark');
             localStorage.setItem('darkMode', state.darkMode);
         }
     
+        // Show views
+        function showView(viewId) {
+            ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'analyticsView'].forEach(id => {
+                document.getElementById(id)?.classList.toggle('hidden', id !== viewId);
+            });
+        }
+    
+        // Initialize app settings
         function initializeApp() {
             if (state.darkMode) {
                 document.body.classList.add('dark');
             }
             Analytics.init();
-        }
-    
-        // Chart Management
-        const ChartManager = {
-            charts: {},
-            initCharts() {
-                this.createStudyPatternChart();
-                this.createFocusScoreChart();
-            },
-    
-            createStudyPatternChart() {
-                const ctx = document.getElementById('dailyPatternChart').getContext('2d');
-                this.charts.studyPattern = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                        datasets: [{
-                            label: 'Study Hours',
-                            data: this.getWeeklyStudyData(),
-                            fill: true,
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.2)'
-                        }]
-                    }
-                });
-            },
-    
-            createFocusScoreChart() {
-                const ctx = document.getElementById('focusDistributionChart').getContext('2d');
-                this.charts.focusScore = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['High Focus', 'Medium Focus', 'Low Focus'],
-                        datasets: [{
-                            data: [50, 30, 20],  // Example data
-                            backgroundColor: ['#10B981', '#FBBF24', '#EF4444']
-                        }]
-                    }
-                });
-            },
-    
-            getWeeklyStudyData() {
-                const data = [2, 3, 1, 4, 2, 0, 3];  // Placeholder for weekly data
-                return data.map(hours => hours * 60); // Convert to minutes
-            }
-        };
-    
-        function toggleAnalyticsView() {
-            Analytics.init();
-            ChartManager.initCharts();
-            showView('analyticsView');
-        }
-    
-        function startSession() {
-            if (state.tasks.length === 0) {
-                alertify.error("Please add at least one task.");
-                return;
-            }
-    
-            const mode = document.getElementById('timerMode').checked ? 'timer' : 'stopwatch';
-            const breakMode = document.getElementById('breakMode').value;
-    
-            SessionManager.initSession(mode, state.tasks, breakMode);
-            showView('sessionView');
-            SessionManager.startSession();
-        }
-    
-        function toggleTimer() {
-            if (state.paused) {
-                SessionManager.resumeSession();
-            } else {
-                SessionManager.pauseSession();
-            }
         }
     </script>
 </body>
