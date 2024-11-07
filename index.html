@@ -344,8 +344,44 @@
             </div>
         </div>
     </div>
+    <!-- Mode Selection View -->
+<div id="modeSelection" class="container mx-auto mt-20 p-6 hidden">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white text-center">Select Study Mode</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 slide-in">
+        <!-- Timer Mode Button -->
+        <div id="timerModeBtn" class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
+            <div class="flex items-center justify-between mb-4">
+                <svg class="w-10 h-10 text-blue-500 group-hover:text-blue-600 transition-colors" 
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-sm text-gray-500 dark:text-gray-400">Focused Sessions</span>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-blue-600 
+                       dark:group-hover:text-blue-400 transition-colors">Timer Mode</h3>
+            <p class="text-gray-600 dark:text-gray-300">Set specific time limits for your study sessions. 
+                Perfect for structured learning and time management.</p>
+        </div>
 
-    <!-- Mode Selection -->
+        <!-- Stopwatch Mode Button -->
+        <div id="stopwatchModeBtn" class="card p-6 cursor-pointer group" onclick="selectMode('stopwatch')">
+            <div class="flex items-center justify-between mb-4">
+                <svg class="w-10 h-10 text-green-500 group-hover:text-green-600 transition-colors" 
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                    </path>
+                </svg>
+                <span class="text-sm text-gray-500 dark:text-gray-400">Flexible Learning</span>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-green-600 
+                       dark:group-hover:text-green-400 transition-colors">Stopwatch Mode</h3>
+            <p class="text-gray-600 dark:text-gray-300">Track your study time without limits. 
+                Ideal for self-paced learning and deep work sessions.</p>
+        </div>
+    </div>
+</div>
     <div id="modeSelection" class="hidden container mx-auto mt-20 p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 slide-in">
             <div class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
@@ -689,7 +725,7 @@
             // Event listener for "Get Started" button
             document.getElementById('loginForm').querySelector('button').addEventListener('click', login);
     
-            // Attach mode selection for Timer and Stopwatch modes
+            // Attach event listeners for Timer and Stopwatch mode selection
             document.getElementById('timerModeBtn').addEventListener('click', () => selectMode('timer'));
             document.getElementById('stopwatchModeBtn').addEventListener('click', () => selectMode('stopwatch'));
     
@@ -744,60 +780,6 @@
     
             const timerSetup = document.getElementById('timerSetup');
             timerSetup.classList.toggle('hidden', mode === 'stopwatch');
-        }
-    
-        // Task Management Functions
-        function addMainTask() {
-            const taskId = Date.now();
-            state.tasks.push({
-                id: taskId,
-                title: '',
-                subtasks: [],
-                completed: false
-            });
-            renderTaskList();
-        }
-    
-        function updateTaskTitle(taskId, value) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (task) {
-                task.title = value;
-            }
-        }
-    
-        function addSubtask(taskId) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (task) {
-                task.subtasks.push({
-                    id: Date.now(),
-                    title: '',
-                    completed: false
-                });
-                renderTaskList();
-            }
-        }
-    
-        function renderTaskList() {
-            const taskList = document.getElementById('taskList');
-            if (!taskList) return;
-    
-            taskList.innerHTML = state.tasks.map((task, index) => `
-                <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
-                    <input type="text" placeholder="Task ${index + 1}" value="${task.title}"
-                           onchange="updateTaskTitle(${task.id}, this.value)"
-                           class="w-full px-4 py-2 mb-3 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                    <div class="ml-4 space-y-2">
-                        ${task.subtasks.map((subtask, subIndex) => `
-                            <input type="text" placeholder="Subtask ${subIndex + 1}" value="${subtask.title}"
-                                   onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
-                                   class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                        `).join('')}
-                    </div>
-                    <button onclick="addSubtask(${task.id})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-                        Add Subtask
-                    </button>
-                </div>
-            `).join('');
         }
     
         function startSession() {
