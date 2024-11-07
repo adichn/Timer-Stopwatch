@@ -414,15 +414,20 @@
 
         function toggleTimer() {
             if (state.paused) {
+                // When starting/resuming
                 if (!state.startTime) {
+                    state.startTime = Date.now(); // For initial start
+                } else {
+                    // For resume after pause, adjust startTime based on elapsed time
                     state.startTime = Date.now() - state.elapsedTime;
                 }
                 state.timer = setInterval(updateTimer, 1000);
                 document.getElementById('startPauseBtn').textContent = 'Pause';
                 document.getElementById('startPauseBtn').classList.replace('bg-green-500', 'bg-yellow-500');
             } else {
+                // When pausing
                 clearInterval(state.timer);
-                state.elapsedTime = Date.now() - state.startTime;
+                state.elapsedTime = Date.now() - state.startTime; // Store the current elapsed time
                 document.getElementById('startPauseBtn').textContent = 'Resume';
                 document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
             }
@@ -430,42 +435,48 @@
         }
 
         function updateTimer() {
-            if (!state.paused) {
-                state.elapsedTime = Date.now() - state.startTime;
-                const timeDisplay = document.getElementById('timeDisplay');
+            const now = Date.now();
+            
+            if (state.mode === 'timer') {
+                state.elapsedTime = now - state.startTime;
+                const remainingTime = state.totalTime - state.elapsedTime;
                 
-                if (state.mode === 'timer') {
-                    const remainingTime = state.totalTime - state.elapsedTime;
-                    if (remainingTime <= 0) {
-                        clearInterval(state.timer);
-                        if (!allTasksCompleted()) {
-                            alertify.confirm(
-                                'Time\'s Up!',
-                                'You still have incomplete tasks. Would you like to extend the timer?',
-                                function() {
-                                    state.totalTime += 30 * 60 * 1000; // Add 30 minutes
-                                    state.timer = setInterval(updateTimer, 1000);
-                                },
-                                function() {
-                                    completeSession();
-                                }
-                            );
-                        } else {
-                            completeSession();
-                        }
-                        return;
+                if (remainingTime <= 0) {
+                    clearInterval(state.timer);
+                    if (!allTasksCompleted()) {
+                        alertify.confirm(
+                            'Time\'s Up!',
+                            'You still have incomplete tasks. Would you like to extend the timer?',
+                            function() {
+                                state.totalTime += 30 * 60 * 1000; // Add 30 minutes
+                                state.timer = setInterval(updateTimer, 1000);
+                            },
+                            function() {
+                                completeSession();
+                            }
+                        );
+                    } else {
+                        completeSession();
                     }
-                    
-                    timeDisplay.textContent = formatTime(remainingTime);
-                    const progress = ((state.totalTime - remainingTime) / state.totalTime) * 100;
-                    document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
-                } else {
-                    timeDisplay.textContent = formatTime(state.elapsedTime);
+                    return;
                 }
-
-                checkForBreak();
-                checkReminders();
+                
+                document.getElementById('timeDisplay').textContent = formatTime(remainingTime);
+                const progress = ((state.totalTime - remainingTime) / state.totalTime) * 100;
+                document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
+            } else {
+                // Stopwatch mode
+                state.elapsedTime = now - state.startTime;
+                document.getElementById('timeDisplay').textContent = formatTime(state.elapsedTime);
             }
+
+            checkForBreak();
+            checkReminders();
+        }
+
+        // Add these helper functions if they're not already present
+        function allTasksCompleted() {
+            return state.tasks.every(task => task.completed);
         }
 
         function toggleTaskCompletion(taskId, subtaskId = null) {
