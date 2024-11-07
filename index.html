@@ -587,10 +587,19 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            const reportContent = document.getElementById('reportContent').innerHTML;
-            doc.fromHTML(reportContent, 15, 15, { 'width': 170 });
-            
-            doc.save("Session_Report.pdf");
+            // Select the report content to be added to the PDF
+            const reportContent = document.getElementById('reportContent');
+
+            // Use the `html` method from jsPDF to capture and render HTML content
+            doc.html(reportContent, {
+                callback: function (doc) {
+                    // Save the document once rendering is complete
+                    doc.save("Session_Report.pdf");
+                },
+                x: 10,
+                y: 10,
+                width: 180  // Scale the content to fit within the PDF's width
+            });
         }
 
         function toggleTimer() {
