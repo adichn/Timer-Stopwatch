@@ -667,6 +667,36 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize app settings
+            initializeApp();
+    
+            // Check user login persistence and show appropriate view
+            if (localStorage.getItem('user')) {
+                showLoggedInState(localStorage.getItem('user'));
+                showView('modeSelection');
+            } else {
+                showView('loginForm');
+            }
+    
+            // Event listeners for main buttons
+            document.getElementById('analyticsBtn').addEventListener('click', toggleAnalyticsView);
+            document.getElementById('startPauseBtn').addEventListener('click', toggleTimer);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('loginForm').querySelector('button').addEventListener('click', login);
+            document.getElementById('startSessionBtn').addEventListener('click', startSession);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    
+            // Remove custom settings and simplify break mode selection
+            document.getElementById('breakMode')?.addEventListener('change', (e) => {
+                const customSettings = document.getElementById('customBreakSettings');
+                if (customSettings) {
+                    customSettings.classList.add('hidden');
+                }
+            });
+        });
+    
+        // Application State
         let state = {
             mode: null,
             darkMode: localStorage.getItem('darkMode') === 'true',
@@ -748,16 +778,6 @@
         }
     
         // Login Persistence
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('user')) {
-                showLoggedInState(localStorage.getItem('user'));
-                showView('modeSelection');
-            } else {
-                showView('loginForm');
-            }
-            initializeApp();
-        });
-    
         function login() {
             const username = document.getElementById('username').value.trim();
             if (username) {
@@ -783,56 +803,206 @@
         }
     
         // Session Management
-        function startSession() {
-            if (state.mode === 'timer') {
-                const hours = parseInt(document.getElementById('hours').value) || 0;
-                const minutes = parseInt(document.getElementById('minutes').value) || 0;
-                if (hours === 0 && minutes === 0) {
-                    alertify.error('Please set a valid time duration');
-                    return;
-                }
-                state.totalTime = (hours * 60 + minutes) * 60 * 1000;
-            }
-    
-            if (state.tasks.length === 0) {
-                alertify.error('Please add at least one task');
-                return;
-            }
-    
-            // Initialize session
-            const breakMode = document.getElementById('breakMode').value;
-            if (['pomodoro', 'long', 'none'].includes(breakMode)) {
+        const SessionManager = {
+            initSession(mode, tasks, breakMode) {
+                state.mode = mode;
+                state.tasks = tasks;
                 state.breakMode = breakMode;
-            } else {
-                state.breakMode = 'none';  // Default to no breaks if not specified
+                state.startTime = Date.now();
+                state.elapsedTime = 0;
+                state.paused = true;
+                this.updateSessionUI();
+            },
+    
+            startSession() {
+                if (!state.startTime) {
+                    state.startTime = Date.now();
+                }
+                state.paused = false;
+                state.timer = setInterval(() => this.updateTimer(), 1000);
+                alertify.success("Session started!");
+            },
+    
+            pauseSession() {
+                if (state.timer) {
+                    clearInterval(state.timer);
+                    state.timer = null;
+                    state.paused = true;
+                    alertify.message("Session paused.");
+                }
+            },
+    
+            resumeSession() {
+                if (state.paused) {
+                    state.paused = false;
+                    state.timer = setInterval(() => this.updateTimer(), 1000);
+                    alertify.success("Session resumed!");
+                }
+            },
+    
+            updateTimer() {
+                const now = Date.now();
+                state.elapsedTime = now - state.startTime;
+                document.getElementById('timeDisplay').textContent = this.formatTime(state.elapsedTime);
+                // Additional logic for managing breaks can go here
+            },
+    
+            formatTime(ms) {
+                const hours = Math.floor(ms / 3600000);
+                const minutes = Math.floor((ms % 3600000) / 60000);
+                const seconds = Math.floor((ms % 60000) / 1000);
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            },
+    
+            resetSession() {
+                if (state.timer) clearInterval(state.timer);
+                state.elapsedTime = 0;
+                state.startTime = null;
+                state.paused = true;
+                this.updateSessionUI();
+            },
+    
+            completeSession() {
+                if (state.timer) clearInterval(state.timer);
+                alertify.success("Session completed!");
+                Analytics.saveSession(state);  // Save session data
+                this.resetSession();
+            },
+    
+            updateSessionUI() {
+                document.getElementById('timeDisplay').textContent = this.formatTime(state.elapsedTime);
+                document.getElementById('currentStreak').textContent = `${Math.floor(state.elapsedTime / 60000)} min`;
+                // Update other session UI elements as needed
             }
+        };
     
-            // Start the session
-            hideAllViews();
-            document.getElementById('sessionView').classList.remove('hidden');
-            SessionManager.initSession(state.mode, state.tasks, state.breakMode);
-            SessionManager.startSession();
-        }
+        // Analytics Management
+        const Analytics = {
+            data: {
+                sessions: [],
+                totalStudyTime: 0
+            },
     
-        // Analytics and Break Settings
-        function toggleAnalyticsView() {
-            Analytics.init();
-            showView('analyticsView');
+            init() {
+                const savedData = JSON.parse(localStorage.getItem('studyAnalytics')) || this.data;
+                this.data = savedData;
+                this.updateUI();
+            },
+    
+            saveSession(sessionData) {
+                const session = {
+                    id: Date.now(),
+                    duration: sessionData.elapsedTime,
+                    tasks: sessionData.tasks,
+                    focusScore: this.calculateFocusScore(sessionData)
+                };
+                this.data.sessions.push(session);
+                this.data.totalStudyTime += session.duration;
+                this.save();
+                this.updateUI();
+            },
+    
+            save() {
+                localStorage.setItem('studyAnalytics', JSON.stringify(this.data));
+            },
+    
+            updateUI() {
+                document.getElementById('totalStudyTime').textContent = `${Math.floor(this.data.totalStudyTime / 3600000)} hrs`;
+                document.getElementById('totalSessions').textContent = this.data.sessions.length;
+            },
+    
+            calculateFocusScore(session) {
+                // Placeholder for a focus score calculation method
+                return Math.min(100, 100 - (session.paused ? 10 : 0));  // Sample logic
+            }
+        };
+    
+        // Theme Toggle
+        function toggleTheme() {
+            state.darkMode = !state.darkMode;
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', state.darkMode);
         }
     
         function initializeApp() {
             if (state.darkMode) {
                 document.body.classList.add('dark');
             }
+            Analytics.init();
         }
     
-        // Break Mode Management (Custom Option Removed)
-        document.getElementById('breakMode')?.addEventListener('change', (e) => {
-            const customSettings = document.getElementById('customBreakSettings');
-            if (customSettings) {
-                customSettings.classList.add('hidden');
+        // Chart Management
+        const ChartManager = {
+            charts: {},
+            initCharts() {
+                this.createStudyPatternChart();
+                this.createFocusScoreChart();
+            },
+    
+            createStudyPatternChart() {
+                const ctx = document.getElementById('dailyPatternChart').getContext('2d');
+                this.charts.studyPattern = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Study Hours',
+                            data: this.getWeeklyStudyData(),
+                            fill: true,
+                            borderColor: '#4F46E5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)'
+                        }]
+                    }
+                });
+            },
+    
+            createFocusScoreChart() {
+                const ctx = document.getElementById('focusDistributionChart').getContext('2d');
+                this.charts.focusScore = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['High Focus', 'Medium Focus', 'Low Focus'],
+                        datasets: [{
+                            data: [50, 30, 20],  // Example data
+                            backgroundColor: ['#10B981', '#FBBF24', '#EF4444']
+                        }]
+                    }
+                });
+            },
+    
+            getWeeklyStudyData() {
+                const data = [2, 3, 1, 4, 2, 0, 3];  // Placeholder for weekly data
+                return data.map(hours => hours * 60); // Convert to minutes
             }
-        });
+        };
+    
+        function toggleAnalyticsView() {
+            Analytics.init();
+            ChartManager.initCharts();
+            showView('analyticsView');
+        }
+    
+        function startSession() {
+            if (state.tasks.length === 0) {
+                alertify.error("Please add at least one task.");
+                return;
+            }
+    
+            const mode = document.getElementById('timerMode').checked ? 'timer' : 'stopwatch';
+            const breakMode = document.getElementById('breakMode').value;
+    
+            SessionManager.initSession(mode, state.tasks, breakMode);
+            showView('sessionView');
+            SessionManager.startSession();
+        }
+    
+        function toggleTimer() {
+            if (state.paused) {
+                SessionManager.resumeSession();
+            } else {
+                SessionManager.pauseSession();
+            }
+        }
     </script>
 </body>
 </html>
