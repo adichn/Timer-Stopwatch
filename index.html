@@ -563,6 +563,36 @@
             `).join('');
         }
 
+        function startNewSession() {
+            // Clear the state and reset timer
+            state = {
+                ...state,  // Keep other settings like theme and user info intact
+                tasks: [],
+                currentTask: 0,
+                timer: null,
+                startTime: null,
+                totalTime: 0,
+                elapsedTime: 0,
+                paused: true,
+                taskTimes: {},
+                breaks: []
+            };
+
+            // Hide report view and show mode selection
+            document.getElementById('reportView').classList.add('hidden');
+            document.getElementById('modeSelection').classList.remove('hidden');
+        }
+
+        function downloadReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const reportContent = document.getElementById('reportContent').innerHTML;
+            doc.fromHTML(reportContent, 15, 15, { 'width': 170 });
+            
+            doc.save("Session_Report.pdf");
+        }
+
         function toggleTimer() {
             if (state.paused) {
                 // When starting/resuming
