@@ -345,43 +345,38 @@
         </div>
     </div>
     <!-- Mode Selection View -->
-<div id="modeSelection" class="container mx-auto mt-20 p-6 hidden">
-    <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white text-center">Select Study Mode</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 slide-in">
-        <!-- Timer Mode Button -->
-        <div id="timerModeBtn" class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
-            <div class="flex items-center justify-between mb-4">
-                <svg class="w-10 h-10 text-blue-500 group-hover:text-blue-600 transition-colors" 
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-sm text-gray-500 dark:text-gray-400">Focused Sessions</span>
+    <div id="modeSelection" class="container mx-auto mt-20 p-6 hidden">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white text-center">Select Study Mode</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Timer Mode Button -->
+            <div id="timerModeBtn" class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
+                <div class="flex items-center justify-between mb-4">
+                    <svg class="w-10 h-10 text-blue-500 group-hover:text-blue-600 transition-colors" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Focused Sessions</span>
+                </div>
+                <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Timer Mode</h3>
+                <p class="text-gray-600 dark:text-gray-300">Set specific time limits for your study sessions. Perfect for structured learning and time management.</p>
             </div>
-            <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-blue-600 
-                       dark:group-hover:text-blue-400 transition-colors">Timer Mode</h3>
-            <p class="text-gray-600 dark:text-gray-300">Set specific time limits for your study sessions. 
-                Perfect for structured learning and time management.</p>
-        </div>
-
-        <!-- Stopwatch Mode Button -->
-        <div id="stopwatchModeBtn" class="card p-6 cursor-pointer group" onclick="selectMode('stopwatch')">
-            <div class="flex items-center justify-between mb-4">
-                <svg class="w-10 h-10 text-green-500 group-hover:text-green-600 transition-colors" 
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
-                    </path>
-                </svg>
-                <span class="text-sm text-gray-500 dark:text-gray-400">Flexible Learning</span>
+    
+            <!-- Stopwatch Mode Button -->
+            <div id="stopwatchModeBtn" class="card p-6 cursor-pointer group" onclick="selectMode('stopwatch')">
+                <div class="flex items-center justify-between mb-4">
+                    <svg class="w-10 h-10 text-green-500 group-hover:text-green-600 transition-colors" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                    </svg>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Flexible Learning</span>
+                </div>
+                <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Stopwatch Mode</h3>
+                <p class="text-gray-600 dark:text-gray-300">Track your study time without limits. Ideal for self-paced learning and deep work sessions.</p>
             </div>
-            <h3 class="text-xl font-bold mb-3 text-gray-800 dark:text-white group-hover:text-green-600 
-                       dark:group-hover:text-green-400 transition-colors">Stopwatch Mode</h3>
-            <p class="text-gray-600 dark:text-gray-300">Track your study time without limits. 
-                Ideal for self-paced learning and deep work sessions.</p>
         </div>
     </div>
-</div>
     <div id="modeSelection" class="hidden container mx-auto mt-20 p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 slide-in">
             <div class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
@@ -709,7 +704,7 @@
             // Check user login persistence and show the appropriate view
             if (localStorage.getItem('user')) {
                 showLoggedInState(localStorage.getItem('user'));
-                showView('modeSelection');
+                showView('modeSelection');  // Redirect to mode selection page, not analytics
             } else {
                 showView('loginForm');
             }
@@ -718,7 +713,7 @@
             document.getElementById('analyticsBtn').addEventListener('click', toggleAnalyticsView);
             document.getElementById('startPauseBtn').addEventListener('click', toggleTimer);
             document.getElementById('logoutBtn').addEventListener('click', logout);
-            document.getElementById('homeBtn').addEventListener('click', () => showView('modeSelection'));
+            document.getElementById('homeBtn').addEventListener('click', () => showView('modeSelection'));  // Home button to go to mode selection
             document.getElementById('startSessionBtn').addEventListener('click', startSession);
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
     
@@ -766,7 +761,7 @@
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('analyticsBtn').classList.remove('hidden');
-            document.getElementById('homeBtn').classList.remove('hidden');
+            document.getElementById('homeBtn').classList.remove('hidden');  // Make sure Home button is visible
         }
     
         function logout() {
@@ -891,12 +886,12 @@
             updateUI() {
                 document.getElementById('totalStudyTime').textContent = `${Math.floor(this.data.totalStudyTime / 3600000)} hrs`;
                 document.getElementById('totalSessions').textContent = this.data.sessions.length;
-                showView('analyticsView');
             }
         };
     
         function toggleAnalyticsView() {
             Analytics.init();
+            showView('analyticsView');  // Ensure Analytics opens the correct view when clicked
         }
     
         function toggleTheme() {
@@ -915,9 +910,9 @@
             if (state.darkMode) {
                 document.body.classList.add('dark');
             }
-            Analytics.init();
+            Analytics.init();  // Load analytics without displaying the analytics view on refresh
         }
     </script>
-
+    
 </body>
 </html>
