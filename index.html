@@ -9,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/themes/default.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <style>
         body.dark { 
             background-color: #1a1a1a; 
@@ -28,9 +29,9 @@
         .hidden { 
             display: none !important; 
         }
-        /* Fixed input text color in dark mode */
         .dark input[type="text"],
-        .dark input[type="number"] {
+        .dark input[type="number"],
+        .dark select {
             color: white;
             background-color: #374151;
         }
@@ -45,6 +46,15 @@
             max-height: 60vh;
             overflow-y: auto;
         }
+        /* Charts dark mode */
+        .dark .chart-container {
+            background-color: #2d2d2d;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        .dark .chart-container canvas {
+            filter: invert(1) hue-rotate(180deg);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-100 transition-colors duration-200">
@@ -54,6 +64,12 @@
             <h1 class="text-xl font-bold dark:text-white">Study Timer</h1>
             <div class="flex items-center space-x-4">
                 <span id="userInfo" class="hidden px-4 py-2 bg-green-500 text-white rounded"></span>
+                <button 
+                    id="analyticsBtn"
+                    onclick="toggleAnalyticsView()" 
+                    class="hidden px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                    Analytics
+                </button>
                 <button 
                     id="themeToggle" 
                     class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -70,7 +86,7 @@
         </div>
     </nav>
 
-    <!-- Login form -->
+    <!-- Login Form -->
     <div id="loginForm" class="container mx-auto mt-20 max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold mb-6 dark:text-white">Welcome to Study Timer</h2>
         <div class="space-y-4">
@@ -208,6 +224,22 @@
         </div>
     </div>
 
+    <!-- Analytics View -->
+    <div id="analyticsView" class="hidden container mx-auto mt-20 p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold dark:text-white">Study Analytics</h2>
+                <button onclick="closeAnalytics()" 
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 dark:text-white">
+                    Close
+                </button>
+            </div>
+            <div id="analyticsContent">
+                <!-- Analytics content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global state
         let state = {
@@ -224,12 +256,130 @@
             breakMode: null,
             nextBreak: null,
             nextReminder: Date.now() + 30 * 60 * 1000,
-            nextMealReminder: Date.now() + 2 * 60 * 1000
+            nextMealReminder: Date.now() + 2 * 60 * 1000,
+            breaks: []
         };
 
-        // Initialize on page load
+        // Analytics System
+        const Analytics = {
+            saveSession(sessionData) {
+                const user = localStorage.getItem('user');
+                if (!user) return;
+
+                let userSessions = JSON.parse(localStorage.getItem(`sessions_${user}`) || '[]');
+                
+                const session = {
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    duration: sessionData.elapsedTime,
+                    mode: sessionData.mode,
+                    tasks: sessionData.tasks.map(task => ({
+                        title: task.title,
+                        completed: task.completed,
+                        subtasks: task.subtasks.map(st => ({
+                            title: st.title,
+                            completed: st.completed
+                        }))
+                    })),
+                    breaks: sessionData.breaks,
+                    completionRate: this.calculateCompletionRate(sessionData.tasks)
+                };
+
+                userSessions.push(session);
+                localStorage.setItem(`sessions_${user}`, JSON.stringify(userSessions));
+            },
+
+            calculateCompletionRate(tasks) {
+                const totalTasks = tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+                const completedTasks = tasks.reduce((acc, task) => {
+                    return acc + (task.completed ? task.subtasks.length + 1 : 
+                        task.subtasks.filter(st => st.completed).length);
+                }, 0);
+                return (completedTasks / totalTasks) * 100;
+            },
+
+            getStats() {
+                const user = localStorage.getItem('user');
+                if (!user) return null;
+
+                const sessions = JSON.parse(localStorage.getItem(`sessions_${user}`) || '[]');
+                if (sessions.length === 0) return null;
+
+                return {
+                    totalSessions: sessions.length,
+                    totalTime: sessions.reduce((acc, s) => acc + s.duration, 0),
+                    averageSessionLength: sessions.reduce((acc, s) => acc + s.duration, 0) / sessions.length,
+                    averageCompletionRate: sessions.reduce((acc, s) => acc + s.completionRate, 0) / sessions.length,
+                    lastSevenDays: this.getLastSevenDaysStats(sessions),
+                    mostProductiveTime: this.getMostProductiveTime(sessions),
+                    taskStats: this.getTaskStats(sessions)
+                };
+            },
+
+            getLastSevenDaysStats(sessions) {
+                const days = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    date.setHours(0, 0, 0, 0);
+                    
+                    const daysSessions = sessions.filter(s => {
+                        const sessionDate = new Date(s.date);
+                        return sessionDate.toDateString() === date.toDateString();
+                    });
+
+                    days.push({
+                        date: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                        totalTime: daysSessions.reduce((acc, s) => acc + s.duration, 0),
+                        sessions: daysSessions.length
+                    });
+                }
+                return days;
+            },
+
+            getMostProductiveTime(sessions) {
+                const hourStats = Array(24).fill().map(() => ({ totalTime: 0, sessions: 0 }));
+                
+                sessions.forEach(session => {
+                    const hour = new Date(session.date).getHours();
+                    hourStats[hour].totalTime += session.duration;
+                    hourStats[hour].sessions++;
+                });
+
+                let bestHour = 0;
+                let maxProductivity = 0;
+
+                hourStats.forEach((stats, hour) => {
+                    if (stats.sessions > 0) {
+                        const productivity = stats.totalTime / stats.sessions;
+                        if (productivity > maxProductivity) {
+                            maxProductivity = productivity;
+                            bestHour = hour;
+                        }
+                    }
+                });
+
+                return bestHour;
+            },
+
+            getTaskStats(sessions) {
+                const taskStats = {};
+                sessions.forEach(session => {
+                    session.tasks.forEach(task => {
+                        if (!taskStats[task.title]) {
+                            taskStats[task.title] = { completed: 0, total: 0 };
+                        }
+                        taskStats[task.title].total++;
+                        if (task.completed) taskStats[task.title].completed++;
+                    });
+                });
+                return taskStats;
+            }
+        };
+
+        // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
-            // Check theme
+            // Apply theme
             if (state.darkMode) {
                 document.body.classList.add('dark');
             }
@@ -250,20 +400,20 @@
 
         // Theme functions
         function toggleTheme() {
+            state.darkMode = !state.darkMode;
             document.body.classList.toggle('dark');
-            state.darkMode = document.body.classList.contains('dark');
             localStorage.setItem('darkMode', state.darkMode);
         }
 
         // Auth functions
         function login() {
             const username = document.getElementById('username').value.trim();
-            if (username) {
-                localStorage.setItem('user', username);
-                showLoggedInState(username);
-            } else {
+            if (!username) {
                 alertify.error('Please enter a username');
+                return;
             }
+            localStorage.setItem('user', username);
+            showLoggedInState(username);
         }
 
         function logout() {
@@ -277,6 +427,7 @@
             document.getElementById('userInfo').textContent = `Welcome, ${username}`;
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('analyticsBtn').classList.remove('hidden');
         }
 
         // Mode selection and setup
@@ -416,7 +567,7 @@
             if (state.paused) {
                 // When starting/resuming
                 if (!state.startTime) {
-                    state.startTime = Date.now(); // For initial start
+                    state.startTime = Date.now();
                 } else {
                     // For resume after pause, adjust startTime based on elapsed time
                     state.startTime = Date.now() - state.elapsedTime;
@@ -427,18 +578,24 @@
             } else {
                 // When pausing
                 clearInterval(state.timer);
-                state.elapsedTime = Date.now() - state.startTime; // Store the current elapsed time
+                state.elapsedTime = Date.now() - state.startTime;
                 document.getElementById('startPauseBtn').textContent = 'Resume';
                 document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+                // Record break
+                state.breaks.push({
+                    type: 'pause',
+                    time: new Date().toISOString(),
+                    duration: state.elapsedTime
+                });
             }
             state.paused = !state.paused;
         }
 
         function updateTimer() {
             const now = Date.now();
+            state.elapsedTime = now - state.startTime;
             
             if (state.mode === 'timer') {
-                state.elapsedTime = now - state.startTime;
                 const remainingTime = state.totalTime - state.elapsedTime;
                 
                 if (remainingTime <= 0) {
@@ -465,18 +622,11 @@
                 const progress = ((state.totalTime - remainingTime) / state.totalTime) * 100;
                 document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
             } else {
-                // Stopwatch mode
-                state.elapsedTime = now - state.startTime;
                 document.getElementById('timeDisplay').textContent = formatTime(state.elapsedTime);
             }
 
             checkForBreak();
             checkReminders();
-        }
-
-        // Add these helper functions if they're not already present
-        function allTasksCompleted() {
-            return state.tasks.every(task => task.completed);
         }
 
         function toggleTaskCompletion(taskId, subtaskId = null) {
@@ -496,6 +646,11 @@
 
             renderTaskDisplay();
             updateProgress();
+
+            if (allTasksCompleted() && state.mode === 'timer' && 
+                (state.totalTime - state.elapsedTime) > 0) {
+                alertify.success('Congratulations! All tasks completed ahead of schedule!');
+            }
         }
 
         function updateProgress() {
@@ -521,6 +676,11 @@
 
             if (Date.now() >= state.nextBreak) {
                 state.nextBreak = Date.now() + workTime + breakTime;
+                state.breaks.push({
+                    type: 'scheduled',
+                    time: new Date().toISOString(),
+                    duration: breakTime
+                });
                 alertify.alert('Break Time!', 
                     `Time for a ${state.breakMode === 'pomodoro' ? '5' : '15'} minute break!`);
                 toggleTimer();
@@ -569,6 +729,14 @@
 
         function completeSession() {
             clearInterval(state.timer);
+            // Save session data
+            Analytics.saveSession({
+                elapsedTime: state.elapsedTime,
+                mode: state.mode,
+                tasks: state.tasks,
+                breaks: state.breaks
+            });
+            
             document.getElementById('sessionView').classList.add('hidden');
             document.getElementById('reportView').classList.remove('hidden');
             generateReport();
@@ -584,6 +752,7 @@
                     <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <p class="text-lg">Total Time: ${formatTime(totalTime)}</p>
                         <p class="text-lg">Completion Rate: ${completionRate.toFixed(1)}%</p>
+                        <p class="text-lg">Total Breaks: ${state.breaks.length}</p>
                     </div>
                     <div class="mt-6">
                         <h3 class="text-xl font-bold mb-4">Task Summary:</h3>
@@ -604,39 +773,87 @@
             document.getElementById('reportContent').innerHTML = reportHTML;
         }
 
-        function downloadReport() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const content = document.getElementById('reportContent').innerText;
-            
-            doc.setFont('helvetica');
-            doc.setFontSize(12);
-            
-            const splitText = doc.splitTextToSize(content, 180);
-            doc.text(splitText, 15, 15);
-            
-            doc.save('study-session-report.pdf');
+        function toggleAnalyticsView() {
+            const stats = Analytics.getStats();
+            if (!stats) {
+                alertify.error('No session data available yet');
+                return;
+            }
+
+            hideAllViews();
+            document.getElementById('analyticsView').classList.remove('hidden');
+            renderAnalytics(stats);
         }
 
-        function startNewSession() {
-            state = {
-                ...state,
-                tasks: [],
-                currentTask: 0,
-                timer: null,
-                startTime: null,
-                totalTime: 0,
-                elapsedTime: 0,
-                paused: true,
-                taskTimes: {},
-                breakMode: null,
-                nextBreak: null,
-                nextReminder: Date.now() + 30 * 60 * 1000,
-                nextMealReminder: Date.now() + 2 * 60 * 1000
-            };
-            
-            document.getElementById('reportView').classList.add('hidden');
+        function renderAnalytics(stats) {
+            const analyticsHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2 dark:text-white">Total Study Time</h3>
+                        <p class="text-2xl font-bold dark:text-white">${formatTime(stats.totalTime)}</p>
+                    </div>
+                    <div class="p-4 bg-green-50 dark:bg-green-900 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2 dark:text-white">Total Sessions</h3>
+                        <p class="text-2xl font-bold dark:text-white">${stats.totalSessions}</p>
+                    </div>
+                    <div class="p-4 bg-purple-50 dark:bg-purple-900 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-2 dark:text-white">Avg. Completion Rate</h3>
+                        <p class="text-2xl font-bold dark:text-white">${stats.averageCompletionRate.toFixed(1)}%</p>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-4 dark:text-white">Last 7 Days Activity</h3>
+                    <div class="grid grid-cols-7 gap-2">
+                        ${stats.lastSevenDays.map(day => `
+                            <div class="p-2 text-center bg-gray-50 dark:bg-gray-700 rounded">
+                                <p class="text-sm dark:text-gray-300">${day.date}</p>
+                                <p class="text-lg font-bold dark:text-white">${formatTime(day.totalTime)}</p>
+                                <p class="text-xs dark:text-gray-300">${day.sessions} sessions</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-4 dark:text-white">Most Productive Time</h3>
+                        <p class="dark:text-gray-300">Best study time: ${stats.mostProductiveTime}:00</p>
+                        <p class="dark:text-gray-300">Avg. session length: ${formatTime(stats.averageSessionLength)}</p>
+                    </div>
+
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-4 dark:text-white">Task Completion Stats</h3>
+                        ${Object.entries(stats.taskStats).map(([task, stats]) => `
+                            <div class="mb-2">
+                                <p class="dark:text-gray-300">${task}</p>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" 
+                                         style="width: ${(stats.completed / stats.total * 100)}%">
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('analyticsContent').innerHTML = analyticsHTML;
+        }
+
+        function hideAllViews() {
+            ['modeSelection', 'setupForm', 'sessionView', 'reportView', 'analyticsView'].forEach(view => {
+                document.getElementById(view).classList.add('hidden');
+            });
+        }
+
+        function closeAnalytics() {
+            document.getElementById('analyticsView').classList.add('hidden');
             document.getElementById('modeSelection').classList.remove('hidden');
+        }
+        
+        function allTasksCompleted() {
+            return state.tasks.every(task => task.completed);
         }
     </script>
 </body>
