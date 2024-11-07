@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Time Organizer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/alertify.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/css/themes/default.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AlertifyJS/1.13.1/alertify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="transition-colors duration-200">
+    <!-- Mode Selection -->
+    <div id="modeSelection" class="container mx-auto p-8">
+        <div class="flex justify-end mb-4">
+            <button id="themeToggle" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+                Toggle Theme
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 cursor-pointer hover:shadow-xl transition-shadow" onclick="selectMode('timer')">
+                <h2 class="text-2xl font-bold mb-4 dark:text-white">Timer Mode</h2>
+                <p class="text-gray-600 dark:text-gray-300">Set a specific time limit for your study session</p>
+            </div>
+            <div class="p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 cursor-pointer hover:shadow-xl transition-shadow" onclick="selectMode('stopwatch')">
+                <h2 class="text-2xl font-bold mb-4 dark:text-white">Stopwatch Mode</h2>
+                <p class="text-gray-600 dark:text-gray-300">Track your study time without limits</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Form -->
+    <div id="setupForm" class="container mx-auto p-8 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div id="timerSetup" class="hidden">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Set Timer Duration</h3>
+                <input type="number" id="hours" placeholder="Hours" class="mr-2 p-2 border rounded dark:bg-gray-700 dark:text-white">
+                <input type="number" id="minutes" placeholder="Minutes" class="p-2 border rounded dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Break Mode</h3>
+                <select id="breakMode" class="w-full p-2 border rounded dark:bg-gray-700 dark:text-white">
+                    <option value="pomodoro">25min work / 5min break</option>
+                    <option value="long">60min work / 15min break</option>
+                    <option value="none">No breaks</option>
+                </select>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Task View Mode</h3>
+                <select id="taskViewMode" class="w-full p-2 border rounded dark:bg-gray-700 dark:text-white">
+                    <option value="all">Show all tasks</option>
+                    <option value="focus">Focus mode (one task at a time)</option>
+                </select>
+            </div>
+
+            <div class="mt-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Tasks</h3>
+                <div id="taskList"></div>
+                <button onclick="addMainTask()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Add Main Task
+                </button>
+            </div>
+
+            <button onclick="startSession()" class="mt-6 px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600">
+                Start Session
+            </button>
+        </div>
+    </div>
+
+    <!-- Session View -->
+    <div id="sessionView" class="container mx-auto p-8 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div class="text-center mb-6">
+                <h2 id="timeDisplay" class="text-4xl font-bold dark:text-white">00:00:00</h2>
+                <div class="mt-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="timeProgress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4 mb-6">
+                <button id="startPauseBtn" onclick="toggleTimer()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    Start
+                </button>
+                <button onclick="resetSession()" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                    Reset
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-bold mb-4 dark:text-white">Task Progress</h3>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div id="taskProgress" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="taskDisplay"></div>
+
+            <button onclick="completeSession()" class="mt-6 px-6 py-3 bg-purple-500 text-white rounded hover:bg-purple-600">
+                Complete Everything
+            </button>
+        </div>
+    </div>
+
+    <!-- Report View -->
+    <div id="reportView" class="container mx-auto p-8 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold mb-6 dark:text-white">Session Report</h2>
+            <div id="reportContent" class="space-y-4"></div>
+            <div class="mt-6 flex space-x-4">
+                <button onclick="downloadReport()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Download PDF
+                </button>
+                <button onclick="startNewSession()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    Start New Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let state = {
+            mode: null,
+            darkMode: false,
+            tasks: [],
+            currentTask: 0,
+            timer: null,
+            startTime: null,
+            totalTime: 0,
+            elapsedTime: 0,
+            paused: true,
+            taskTimes: {},
+            breakMode: null,
+            nextBreak: null,
+            nextReminder: Date.now() + 30 * 60 * 1000, // 30 minutes
+            nextMealReminder: Date.now() + 2 * 60 * 60 * 1000 // 2 hours
+        };
+
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            state.darkMode = !state.darkMode;
+            document.body.classList.toggle('dark');
+            document.body.classList.toggle('bg-gray-100');
+            document.body.classList.toggle('bg-gray-900');
+        });
+
+        function selectMode(mode) {
+            state.mode = mode;
+            document.getElementById('modeSelection').classList.add('hidden');
+            document.getElementById('setupForm').classList.remove('hidden');
+            if (mode === 'timer') {
+                document.getElementById('timerSetup').classList.remove('hidden');
+            }
+        }
+
+        function addMainTask() {
+            const taskId = Date.now();
+            state.tasks.push({
+                id: taskId,
+                title: '',
+                subtasks: [],
+                completed: false
+            });
+            renderTaskList();
+        }
+
+        function addSubtask(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks.push({
+                    id: Date.now(),
+                    title: '',
+                    completed: false
+                });
+                renderTaskList();
+            }
+        }
+
+        function updateTaskTitle(taskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.title = value;
+            }
+        }
+
+        function updateSubtaskTitle(taskId, subtaskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.title = value;
+                }
+            }
+        }
+
+        function renderTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = state.tasks.map((task, index) => `
+                <div class="mb-4 p-4 border rounded dark:border-gray-700">
+                    <input
+                        type="text"
+                        placeholder="Main Task ${index + 1}"
+                        value="${task.title}"
+                        onchange="updateTaskTitle(${task.id}, this.value)"
+                        class="w-full p-2 mb-2 border rounded dark:bg-gray-700 dark:text-white"
+                    >
+                    <div class="ml-4">
+                        ${task.subtasks.map((subtask, subIndex) => `
+                            <input
+                                type="text"
+                                placeholder="Subtask ${subIndex + 1}"
+                                value="${subtask.title}"
+                                onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
+                                class="w-full p-2 mb-2 border rounded dark:bg-gray-700 dark:text-white"
+                            >
+                        `).join('')}
+                    </div>
+                    <button onclick="addSubtask(${task.id})" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Add Subtask
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function startSession() {
+            if (state.mode === 'timer') {
+                const hours = parseInt(document.getElementById('hours').value) || 0;
+                const minutes = parseInt(document.getElementById('minutes').value) || 0;
+                state.totalTime = (hours * 60 + minutes) * 60 * 1000;
+                if (state.totalTime <= 0) {
+                    alertify.error('Please set a valid time duration');
+                    return;
+                }
+            }
+
+            state.breakMode = document.getElementById('breakMode').value;
+            state.taskViewMode = document.getElementById('taskViewMode').value;
+
+            if (state.tasks.length === 0) {
+                alertify.error('Please add at least one task');
+                return;
+            }
+
+            document.getElementById('setupForm').classList.add('hidden');
+            document.getElementById('sessionView').classList.remove('hidden');
+            renderTaskDisplay();
+            updateProgress();
+        }
+
+        function toggleTimer() {
+            if (state.paused) {
+                if (!state.startTime) {
+                    state.startTime = Date.now() - state.elapsedTime;
+                }
+                state.timer = setInterval(updateTimer, 1000);
+                document.getElementById('startPauseBtn').textContent = 'Pause';
+                document.getElementById('startPauseBtn').classList.replace('bg-green-500', 'bg-yellow-500');
+            } else {
+                clearInterval(state.timer);
+                document.getElementById('startPauseBtn').textContent = 'Resume';
+                document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+            }
+            state.paused = !state.paused;
+        }
+
+        function updateTimer() {
+            state.elapsedTime = Date.now() - state.startTime;
+            const timeDisplay = document.getElementById('timeDisplay');
+            
+            if (state.mode === 'timer' && state.elapsedTime >= state.totalTime) {
+                clearInterval(state.timer);
+                if (!allTasksCompleted()) {
+                    alertify.confirm(
+                        'Time\'s Up!',
+                        'You still have incomplete tasks. Would you like to extend the timer?',
+                        function() {
+                            state.totalTime += 30 * 60 * 1000; // Add 30 minutes
+                            state.timer = setInterval(updateTimer, 1000);
+                        },
+                        function() {
+                            completeSession();
+                        }
+                    );
+                } else {
+                    completeSession();
+                }
+            }
+
+            // Update display
+            const hours = Math.floor(state.elapsedTime / (60 * 60 * 1000));
+            const minutes = Math.floor((state.elapsedTime % (60 * 60 * 1000)) / (60 * 1000));
+            const seconds = Math.floor((state.elapsedTime % (60 * 1000)) / 1000);
+            timeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            // Update progress bar
+            if (state.mode === 'timer') {
+                const progress = (state.elapsedTime / state.totalTime) * 100;
+                document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
+            }
+
+            // Check for breaks
+            checkForBreak();
+            
+            // Check for reminders
+            checkReminders();
+        }
+
+        function checkForBreak() {
+            if (state.breakMode === 'none' || state.paused) return;
+
+            const workTime = state.breakMode === 'pomodoro' ? 25 * 60 * 1000 : 60 * 60 * 1000;
+            const breakTime = state.breakMode === 'pomodoro' ? 5 * 60 * 1000 : 15 * 60 * 1000;
+
+            if (!state.nextBreak) {
+                state.nextBreak = state.startTime + workTime;
+            }
+
+            if (Date.now() >= state.nextBreak) {
+                state.nextBreak = Date.now() + workTime + breakTime;
+                alertify.alert('Break Time!', 
+                    `Time for a ${state.breakMode === 'pomodoro' ? '5' : '15'} minute break!`);
+                toggleTimer(); // Pause the timer
+            }
+        }
+
+        function checkReminders() {
+            const now = Date.now();
+
+            // Water/movement reminder
+            if (now >= state.nextReminder) {
+                alertify.notify('Time to stand up, move around, and drink some water!', 'success', 5);
+                state.nextReminder = now + 30 * 60 * 1000; // Next reminder in 30 minutes
+            }
+
+            // Meal reminder
+            if (now >= state.nextMealReminder) {
+                alertify.notify('Remember to eat something!', 'success', 5);
+                state.nextMealReminder = now + 2 * 60 * 60 * 1000; // Next reminder in 2 hours
+            }
+        }
+
+        function toggleTaskCompletion(taskId, subtaskId = null) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (subtaskId === null) {
+                task.completed = !task.completed;
+                task.subtasks.forEach(st => st.completed = task.completed);
+            } else {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    // Check if all subtasks are completed
+                    task.completed = task.subtasks.every(st => st.completed);
+                }
+            }
+
+            // Record completion time
+            const now = Date.now();
+            if (!state.taskTimes[taskId]) {
+                state.taskTimes[taskId] = { start: state.startTime };
+            }
+            if (task.completed) {
+                state.taskTimes[taskId].end = now;
+            }
+
+            renderTaskDisplay();
+            updateProgress();
+
+            if (allTasksCompleted() && state.mode === 'timer' && state.elapsedTime < state.totalTime) {
+                alertify.success('Congratulations! You completed all tasks ahead of schedule!');
+            }
+        }
+
+        function renderTaskDisplay() {
+            const taskDisplay = document.getElementById('taskDisplay');
+            if (state.taskViewMode === 'focus') {
+                const currentTask = state.tasks[state.currentTask];
+                if (!currentTask) return;
+
+                taskDisplay.innerHTML = `
+                    <div class="p-4 border rounded dark:border-gray-700">
+                        <div class="flex items-center mb-2">
+                            <input type="checkbox" 
+                                ${currentTask.completed ? 'checked' : ''} 
+                                onchange="toggleTaskCompletion(${currentTask.id})"
+                                class="mr-2">
+                            <span class="${currentTask.completed ? 'line-through' : ''} dark:text-white">
+                                ${currentTask.title}
+                            </span>
+                        </div>
+                        <div class="ml-4">
+                            ${currentTask.subtasks.map(subtask => `
+                                <div class="flex items-center mb-2">
+                                    <input type="checkbox" 
+                                        ${subtask.completed ? 'checked' : ''} 
+                                        onchange="toggleTaskCompletion(${currentTask.id}, ${subtask.id})"
+                                        class="mr-2">
+                                    <span class="${subtask.completed ? 'line-through' : ''} dark:text-white">
+                                        ${subtask.title}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                taskDisplay.innerHTML = state.tasks.map(task => `
+                    <div class="p-4 border rounded dark:border-gray-700 mb-4">
+                        <div class="flex items-center mb-2">
+                            <input type="checkbox" 
+                                ${task.completed ? 'checked' : ''} 
+                                onchange="toggleTaskCompletion(${task.id})"
+                                class="mr-2">
+                            <span class="${task.completed ? 'line-through' : ''} dark:text-white">
+                                ${task.title}
+                            </span>
+                        </div>
+                        <div class="ml-4">
+                            ${task.subtasks.map(subtask => `
+                                <div class="flex items-center mb-2">
+                                    <input type="checkbox" 
+                                        ${subtask.completed ? 'checked' : ''} 
+                                        onchange="toggleTaskCompletion(${task.id}, ${subtask.id})"
+                                        class="mr-2">
+                                    <span class="${subtask.completed ? 'line-through' : ''} dark:text-white">
+                                        ${subtask.title}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateProgress() {
+            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = state.tasks.reduce((acc, task) => {
+                return acc + (task.completed ? task.subtasks.length + 1 : 
+                    task.subtasks.filter(st => st.completed).length);
+            }, 0);
+
+            const progress = (completedTasks / totalTasks) * 100;
+            document.getElementById('taskProgress').style.width = `${progress}%`;
+        }
+
+        function allTasksCompleted() {
+            return state.tasks.every(task => task.completed);
+        }
+
+        function resetSession() {
+            if (confirm('Are you sure you want to reset the session? All progress will be lost.')) {
+                clearInterval(state.timer);
+                state.elapsedTime = 0;
+                state.startTime = null;
+                state.paused = true;
+                state.tasks.forEach(task => {
+                    task.completed = false;
+                    task.subtasks.forEach(st => st.completed = false);
+                });
+                document.getElementById('timeDisplay').textContent = '00:00:00';
+                document.getElementById('timeProgress').style.width = '0%';
+                document.getElementById('taskProgress').style.width = '0%';
+                document.getElementById('startPauseBtn').textContent = 'Start';
+                document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+                renderTaskDisplay();
+            }
+        }
+
+        function generateReport() {
+            const totalTime = state.elapsedTime;
+            const completedTasks = state.tasks.filter(t => t.completed);
+            const completionRate = (completedTasks.length / state.tasks.length) * 100;
+
+            let report = `
+                <div class="space-y-4 dark:text-white">
+                    <h3 class="text-xl font-bold">Session Summary</h3>
+                    <p>Total Time: ${formatTime(totalTime)}</p>
+                    <p>Completion Rate: ${completionRate.toFixed(1)}%</p>
+                    <h4 class="text-lg font-bold mt-4">Task Details:</h4>
+                    ${state.tasks.map(task => {
+                        const taskTime = state.taskTimes[task.id];
+                        const duration = taskTime && taskTime.end ? 
+                            taskTime.end - taskTime.start : 
+                            'Incomplete';
+                        
+                        return `
+                            <div class="ml-4">
+                                <p class="font-medium">${task.title} - ${
+                                    typeof duration === 'number' ? 
+                                    formatTime(duration) : duration
+                                }</p>
+                                ${task.subtasks.map(st => `
+                                    <p class="ml-4">• ${st.title} - ${st.completed ? '✓' : '✗'}</p>
+                                `).join('')}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            return report;
+        }
+
+        function formatTime(ms) {
+            const hours = Math.floor(ms / (60 * 60 * 1000));
+            const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+            const seconds = Math.floor((ms % (60 * 1000)) / 1000);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function completeSession() {
+            clearInterval(state.timer);
+            document.getElementById('sessionView').classList.add('hidden');
+            document.getElementById('reportView').classList.remove('hidden');
+            document.getElementById('reportContent').innerHTML = generateReport();
+        }
+
+        function downloadReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const content = document.getElementById('reportContent').innerText;
+            
+            doc.setFont('helvetica');
+            doc.setFontSize(12);
+            
+            const splitText = doc.splitTextToSize(content, 180);
+            doc.text(splitText, 15, 15);
+            
+            doc.save('study-session-report.pdf');
+        }
+
+        function startNewSession() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
