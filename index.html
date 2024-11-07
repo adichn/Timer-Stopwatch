@@ -260,37 +260,12 @@
                             Analytics
                         </span>
                     </button>
-                    <button id="achievementsBtn" onclick="toggleAchievementsView()"
-                        class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-yellow-600 dark:hover:text-yellow-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
-                                </path>
-                            </svg>
-                            Achievements
-                        </span>
-                    </button>
-                    <button id="settingsBtn" onclick="toggleSettingsView()"
-                        class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                                </path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
-                                </path>
-                            </svg>
-                            Settings
-                        </span>
-                    </button>
                     <button id="themeToggle" onclick="toggleTheme()" 
                         class="nav-item text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400">
                         <span class="flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                                    d="M20.354 15.354A9 9 0 118.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
                                 </path>
                             </svg>
                             Theme
@@ -385,8 +360,25 @@
     <div id="setupForm" class="hidden container mx-auto mt-20 p-6">
         <div class="card p-6 slide-in">
             <div id="timerSetup" class="hidden mb-8">
-                <!-- Session Duration Inputs -->
-                <!-- ... (code remains unchanged) ... -->
+                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Session Duration</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="relative">
+                        <input type="number" id="hours" placeholder="Hours" min="0"
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                            hrs
+                        </span>
+                    </div>
+                    <div class="relative">
+                        <input type="number" id="minutes" placeholder="Minutes" min="0" max="59"
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                        <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                            min
+                        </span>
+                    </div>
+                </div>
             </div>
 
             <div class="mb-8">
@@ -400,14 +392,14 @@
                 </select>
             </div>
 
-            <!-- Removed Custom Break Settings -->
-
             <div class="mb-8">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white">Tasks</h3>
                     <button onclick="addMainTask()" 
                         class="btn-secondary flex items-center">
-                        <!-- ... (icon code) ... -->
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
                         Add Task
                     </button>
                 </div>
@@ -464,7 +456,7 @@
                     class="px-8 py-4 rounded-lg text-white bg-green-500 hover:bg-green-600 
                            transition-all duration-200 flex items-center">
                     <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <path id="startPauseIcon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                             d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
                         </path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -508,7 +500,7 @@
                        transition-all duration-200 flex items-center justify-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
                     </path>
                 </svg>
                 Complete Session
@@ -620,7 +612,104 @@
             totalTime: 0,
             loggedIn: false,
             user: null
-        };function toggleTheme() {
+        };
+
+        // Task management functions
+        function addMainTask() {
+            const taskId = Date.now();
+            state.tasks.push({
+                id: taskId,
+                title: '',
+                subtasks: [],
+                completed: false
+            });
+            renderTaskList();
+        }
+
+        function updateTaskTitle(taskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.title = value;
+            }
+        }
+
+        function addSubtask(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks.push({
+                    id: Date.now(),
+                    title: '',
+                    completed: false
+                });
+                renderTaskList();
+            }
+        }
+
+        function updateSubtaskTitle(taskId, subtaskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.title = value;
+                }
+            }
+        }
+
+        function renderTaskList() {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+
+            taskList.innerHTML = state.tasks.map((task, index) => `
+                <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
+                    <input
+                        type="text"
+                        placeholder="Task ${index + 1}"
+                        value="${task.title}"
+                        onchange="updateTaskTitle(${task.id}, this.value)"
+                        class="w-full px-4 py-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
+                               dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    >
+                    <div class="ml-4 space-y-2">
+                        ${task.subtasks.map((subtask, subIndex) => `
+                            <input
+                                type="text"
+                                placeholder="Subtask ${subIndex + 1}"
+                                value="${subtask.title}"
+                                onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
+                                class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                       dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            >
+                        `).join('')}
+                    </div>
+                    <button onclick="addSubtask(${task.id})" 
+                        class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                        Add Subtask
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // View management
+        function hideAllViews() {
+            ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'analyticsView']
+                .forEach(viewId => {
+                    const element = document.getElementById(viewId);
+                    if (element) {
+                        element.classList.add('hidden');
+                    }
+                });
+        }
+
+        function showView(viewId) {
+            hideAllViews();
+            const view = document.getElementById(viewId);
+            if (view) {
+                view.classList.remove('hidden');
+            }
+        }
+
+        // Event handlers
+        function toggleTheme() {
             state.darkMode = !state.darkMode;
             document.body.classList.toggle('dark');
             localStorage.setItem('darkMode', state.darkMode);
@@ -632,11 +721,15 @@
         }
 
         function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('user');
-                state.loggedIn = false;
-                location.reload();
+            if (SessionManager.currentSession) {
+                if (!confirm('You have an active session. Are you sure you want to logout? Your progress will be lost.')) {
+                    return;
+                }
             }
+
+            localStorage.removeItem('user');
+            state.loggedIn = false;
+            location.reload();
         }
 
         // Initialize app
@@ -665,7 +758,28 @@
 
         function attachEventListeners() {
             // Event listeners for your buttons
-            // ... (attach necessary event listeners) ...
+            document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+
+            // Login form
+            document.getElementById('username')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+
+            // Break mode selector
+            document.getElementById('breakMode')?.addEventListener('change', (e) => {
+                const customSettings = document.getElementById('customBreakSettings');
+                if (customSettings) {
+                    customSettings.classList.toggle('hidden', e.target.value !== 'custom');
+                }
+            });
+
+            // Window focus events for distraction tracking
+            window.addEventListener('blur', () => {
+                if (SessionManager.currentSession && !SessionManager.currentSession.paused) {
+                    SessionManager.currentSession.distractionCount++;
+                    alertify.warning('Stay focused! Switching tasks reduces productivity.');
+                }
+            });
         }
 
         function login() {
@@ -773,6 +887,7 @@
                 };
 
                 this.updateUI();
+                renderTaskDisplay();
             },
 
             startSession() {
@@ -897,44 +1012,36 @@
             updateUI() {
                 // Update buttons and session status
                 const startPauseBtn = document.getElementById('startPauseBtn');
+                const startPauseIcon = document.getElementById('startPauseIcon');
                 if (this.currentSession && !this.currentSession.paused) {
-                    startPauseBtn.textContent = 'Pause';
+                    startPauseBtn.innerHTML = `
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M10 9v6m4-6v6"></path>
+                        </svg>
+                        Pause
+                    `;
                 } else {
-                    startPauseBtn.textContent = 'Start';
+                    startPauseBtn.innerHTML = `
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="startPauseIcon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                            </path>
+                        </svg>
+                        Start
+                    `;
                 }
 
                 // Update task display
-                this.renderTaskDisplay();
-            },
-
-            renderTaskDisplay() {
-                const taskDisplay = document.getElementById('taskDisplay');
-                if (!taskDisplay || !this.currentSession) return;
-
-                taskDisplay.innerHTML = this.currentSession.tasks.map(task => `
-                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div class="flex items-center justify-between">
-                            <span class="font-medium text-gray-800 dark:text-white">${task.title}</span>
-                            <input type="checkbox" onchange="SessionManager.toggleTaskCompletion(${task.id}, this.checked)" ${task.completed ? 'checked' : ''}>
-                        </div>
-                        ${task.subtasks.length > 0 ? `
-                            <div class="ml-4 mt-2 space-y-2">
-                                ${task.subtasks.map(subtask => `
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-gray-600 dark:text-gray-300">${subtask.title}</span>
-                                        <input type="checkbox" onchange="SessionManager.toggleSubtaskCompletion(${task.id}, ${subtask.id}, this.checked)" ${subtask.completed ? 'checked' : ''}>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('');
+                renderTaskDisplay();
             },
 
             toggleTaskCompletion(taskId, completed) {
                 const task = this.currentSession.tasks.find(t => t.id === taskId);
                 if (task) {
                     task.completed = completed;
+                    // Update task progress
+                    updateTaskProgress();
                 }
             },
 
@@ -944,10 +1051,60 @@
                     const subtask = task.subtasks.find(st => st.id === subtaskId);
                     if (subtask) {
                         subtask.completed = completed;
+                        // Update task progress
+                        updateTaskProgress();
                     }
                 }
             }
         };
+
+        function renderTaskDisplay() {
+            const taskDisplay = document.getElementById('taskDisplay');
+            if (!taskDisplay || !SessionManager.currentSession) return;
+
+            taskDisplay.innerHTML = SessionManager.currentSession.tasks.map(task => `
+                <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-gray-800 dark:text-white">${task.title}</span>
+                        <input type="checkbox" onchange="SessionManager.toggleTaskCompletion(${task.id}, this.checked)" ${task.completed ? 'checked' : ''}>
+                    </div>
+                    ${task.subtasks.length > 0 ? `
+                        <div class="ml-4 mt-2 space-y-2">
+                            ${task.subtasks.map(subtask => `
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">${subtask.title}</span>
+                                    <input type="checkbox" onchange="SessionManager.toggleSubtaskCompletion(${task.id}, ${subtask.id}, this.checked)" ${subtask.completed ? 'checked' : ''}>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            updateTaskProgress();
+        }
+
+        function updateTaskProgress() {
+            if (!SessionManager.currentSession) return;
+
+            const tasks = SessionManager.currentSession.tasks;
+            const totalTasks = tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = tasks.reduce((acc, task) => {
+                const subtaskCompleted = task.subtasks.filter(st => st.completed).length;
+                return acc + (task.completed ? 1 : 0) + subtaskCompleted;
+            }, 0);
+
+            const taskProgressBar = document.getElementById('taskProgress');
+            const completedTaskCount = document.getElementById('completedTaskCount');
+            const totalTaskCount = document.getElementById('totalTaskCount');
+
+            if (taskProgressBar && completedTaskCount && totalTaskCount) {
+                const percentage = totalTasks === 0 ? 0 : (completedTasks / totalTasks) * 100;
+                taskProgressBar.style.width = `${percentage}%`;
+                completedTaskCount.textContent = completedTasks;
+                totalTaskCount.textContent = totalTasks;
+            }
+        }
 
         // Analytics Object
         const Analytics = {
@@ -1049,6 +1206,49 @@
             const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((ms % (1000 * 60)) / 1000);
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Toggle Analytics View
+        function toggleAnalyticsView() {
+            if (!state.loggedIn) return;
+
+            hideAllViews();
+            document.getElementById('analyticsView').classList.remove('hidden');
+            // Initialize charts if needed
+            // ChartManager.initCharts();
+            // ProductivityInsights.renderInsights();
+            // AchievementSystem.renderAchievements();
+        }
+
+        function resetStatistics() {
+            if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
+                Analytics.data = {
+                    sessions: []
+                };
+                Analytics.save();
+                Analytics.updateUI();
+                alertify.success('Statistics have been reset');
+            }
+        }
+
+        function exportAnalytics(format) {
+            if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Add content to PDF
+                doc.setFont('helvetica');
+                doc.setFontSize(20);
+                doc.text('Study Timer Analytics Report', 20, 20);
+
+                doc.setFontSize(12);
+                const totalTime = Analytics.data.sessions.reduce((acc, s) => acc + s.duration, 0);
+                doc.text(`Total Study Time: ${formatTime(totalTime)}`, 20, 40);
+                doc.text(`Total Sessions: ${Analytics.data.sessions.length}`, 20, 50);
+
+                doc.save('study-analytics.pdf');
+                alertify.success('Analytics exported successfully');
+            }
         }
     </script>
 </body>
