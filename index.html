@@ -682,6 +682,7 @@
             document.getElementById('analyticsBtn').addEventListener('click', toggleAnalyticsView);
             document.getElementById('startPauseBtn').addEventListener('click', toggleTimer);
             document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('homeBtn').addEventListener('click', () => showView('modeSelection'));
             document.getElementById('startSessionBtn').addEventListener('click', startSession);
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
     
@@ -694,14 +695,6 @@
     
             // Attach event listener for "Add Task" button
             document.getElementById('addTaskBtn').addEventListener('click', addMainTask);
-    
-            // Simplify break mode selection
-            document.getElementById('breakMode')?.addEventListener('change', () => {
-                const customSettings = document.getElementById('customBreakSettings');
-                if (customSettings) {
-                    customSettings.classList.add('hidden');
-                }
-            });
         });
     
         let state = {
@@ -723,7 +716,6 @@
         function login() {
             const username = document.getElementById('username').value.trim();
             if (username) {
-                // Save user login in localStorage
                 localStorage.setItem('user', username);
                 showLoggedInState(username);
                 showView('modeSelection');  // Show the mode selection screen after login
@@ -738,6 +730,7 @@
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('analyticsBtn').classList.remove('hidden');
+            document.getElementById('homeBtn').classList.remove('hidden');
         }
     
         function logout() {
@@ -755,7 +748,7 @@
     
         // Task Management Functions
         function addMainTask() {
-            const taskId = Date.now(); // Unique ID for each task
+            const taskId = Date.now();
             state.tasks.push({
                 id: taskId,
                 title: '',
@@ -823,16 +816,14 @@
                 state.totalTime = (hours * 60 + minutes) * 60 * 1000;
             }
     
-            const breakMode = document.getElementById('breakMode').value;
-            SessionManager.initSession(state.mode, state.tasks, breakMode);
+            SessionManager.initSession(state.mode, state.tasks);
             showView('sessionView');
             SessionManager.startSession();
         }
     
         const SessionManager = {
-            initSession(mode, tasks, breakMode) {
+            initSession(mode, tasks) {
                 state.tasks = tasks;
-                state.breakMode = breakMode;
                 state.startTime = Date.now();
                 state.elapsedTime = 0;
                 state.paused = true;
@@ -903,7 +894,7 @@
                     id: Date.now(),
                     duration: sessionData.elapsedTime,
                     tasks: sessionData.tasks,
-                    focusScore: 100  // Placeholder
+                    focusScore: 100
                 };
                 this.data.sessions.push(session);
                 this.data.totalStudyTime += session.duration;
@@ -918,8 +909,13 @@
             updateUI() {
                 document.getElementById('totalStudyTime').textContent = `${Math.floor(this.data.totalStudyTime / 3600000)} hrs`;
                 document.getElementById('totalSessions').textContent = this.data.sessions.length;
+                showView('analyticsView');
             }
         };
+    
+        function toggleAnalyticsView() {
+            Analytics.init();
+        }
     
         function toggleTheme() {
             state.darkMode = !state.darkMode;
