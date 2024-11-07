@@ -667,1199 +667,123 @@
     </div>
 
     <script>
-
-        // Add this at the beginning of your JavaScript section, right after the Analytics object
-let state = {
-    mode: null,
-    darkMode: localStorage.getItem('darkMode') === 'true',
-    tasks: [],
-    currentTask: 0,
-    timer: null,
-    startTime: null,
-    totalTime: 0,
-    elapsedTime: 0,
-    paused: true,
-    taskTimes: {},
-    breakMode: null,
-    nextBreak: null,
-    nextReminder: Date.now() + 30 * 60 * 1000,
-    nextMealReminder: Date.now() + 2 * 60 * 1000
-};
-
-// Task management functions
-function addMainTask() {
-    const taskId = Date.now();
-    state.tasks.push({
-        id: taskId,
-        title: '',
-        subtasks: [],
-        completed: false
-    });
-    renderTaskList();
-}
-
-function updateTaskTitle(taskId, value) {
-    const task = state.tasks.find(t => t.id === taskId);
-    if (task) {
-        task.title = value;
-    }
-}
-
-function addSubtask(taskId) {
-    const task = state.tasks.find(t => t.id === taskId);
-    if (task) {
-        task.subtasks.push({
-            id: Date.now(),
-            title: '',
-            completed: false
-        });
-        renderTaskList();
-    }
-}
-
-function updateSubtaskTitle(taskId, subtaskId, value) {
-    const task = state.tasks.find(t => t.id === taskId);
-    if (task) {
-        const subtask = task.subtasks.find(st => st.id === subtaskId);
-        if (subtask) {
-            subtask.title = value;
+        let state = {
+            mode: null,
+            darkMode: localStorage.getItem('darkMode') === 'true',
+            tasks: [],
+            currentTask: 0,
+            timer: null,
+            startTime: null,
+            totalTime: 0,
+            elapsedTime: 0,
+            paused: true,
+            taskTimes: {},
+            breakMode: null,
+            nextBreak: null,
+        };
+    
+        // Task Management Functions
+        function addMainTask() {
+            const taskId = Date.now();
+            state.tasks.push({
+                id: taskId,
+                title: '',
+                subtasks: [],
+                completed: false
+            });
+            renderTaskList();
         }
-    }
-}
-
-function renderTaskList() {
-    const taskList = document.getElementById('taskList');
-    if (!taskList) return;
-
-    taskList.innerHTML = state.tasks.map((task, index) => `
-        <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
-            <input
-                type="text"
-                placeholder="Task ${index + 1}"
-                value="${task.title}"
-                onchange="updateTaskTitle(${task.id}, this.value)"
-                class="w-full px-4 py-2 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
-                       dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-            <div class="ml-4 space-y-2">
-                ${task.subtasks.map((subtask, subIndex) => `
-                    <input
-                        type="text"
-                        placeholder="Subtask ${subIndex + 1}"
-                        value="${subtask.title}"
-                        onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
-                        class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
-                               dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                    >
-                `).join('')}
-            </div>
-            <button onclick="addSubtask(${task.id})" 
-                class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-                Add Subtask
-            </button>
-        </div>
-    `).join('');
-}
-
-// View management
-function hideAllViews() {
-    ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'reportView', 'analyticsView']
-        .forEach(viewId => {
-            const element = document.getElementById(viewId);
-            if (element) {
-                element.classList.add('hidden');
+    
+        function updateTaskTitle(taskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.title = value;
             }
-        });
-}
-
-function showView(viewId) {
-    hideAllViews();
-    const view = document.getElementById(viewId);
-    if (view) {
-        view.classList.remove('hidden');
-    }
-}
-
-// Event handlers for buttons
-function toggleAchievementsView() {
-    const achievements = document.getElementById('achievementProgress');
-    if (achievements) {
-        AchievementSystem.renderAchievements();
-        showView('analyticsView');
-    }
-}
-
-function toggleSettingsView() {
-    // Implement settings view if needed
-    alertify.message('Settings feature coming soon!');
-}
-
-// Initialize app
-document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
-    attachEventListeners();
-});
-
-function initializeApp() {
-    // Apply saved theme
-    if (state.darkMode) {
-        document.body.classList.add('dark');
-    }
-
-    // Check login status
-    const user = localStorage.getItem('user');
-    if (user) {
-        showLoggedInState(user);
-    }
-
-    // Initialize analytics
-    Analytics.init();
-
-    // Show appropriate view
-    if (!user) {
-        showView('loginForm');
-    } else {
-        showView('modeSelection');
-    }
-}
-
-function attachEventListeners() {
-    // Make sure all buttons are properly attached to their event handlers
-    document.getElementById('analyticsBtn')?.addEventListener('click', toggleAnalyticsView);
-    document.getElementById('achievementsBtn')?.addEventListener('click', toggleAchievementsView);
-    document.getElementById('settingsBtn')?.addEventListener('click', toggleSettingsView);
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
-
-    // Break mode change handler
-    document.getElementById('breakMode')?.addEventListener('change', (e) => {
-        const customSettings = document.getElementById('customBreakSettings');
-        if (customSettings) {
-            customSettings.classList.toggle('hidden', e.target.value !== 'custom');
         }
-    });
-}
-        // Enhanced Analytics System
-        const Analytics = {
-            // Data Storage
-            data: {
-                sessions: [],
-                achievements: [],
-                stats: {
-                    totalTime: 0,
-                    totalSessions: 0,
-                    completionRates: [],
-                    streakDays: 0,
-                    productiveHours: Array(24).fill(0),
-                    taskStats: {},
-                    breakPatterns: [],
-                    focusScores: []
-                }
-            },
-
-            // Initialize Analytics
-            init() {
-                const savedData = localStorage.getItem('studyAnalytics');
-                if (savedData) {
-                    this.data = JSON.parse(savedData);
-                }
-                this.updateUI();
-            },
-
-            // Save Session
-            saveSession(sessionData) {
-                const session = {
+    
+        function addSubtask(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks.push({
                     id: Date.now(),
-                    date: new Date().toISOString(),
-                    duration: sessionData.elapsedTime,
-                    mode: sessionData.mode,
-                    tasks: sessionData.tasks.map(task => ({
-                        title: task.title,
-                        completed: task.completed,
-                        duration: this.getTaskDuration(task),
-                        subtasks: task.subtasks.map(st => ({
-                            title: st.title,
-                            completed: st.completed
-                        }))
-                    })),
-                    breaks: sessionData.breaks,
-                    focusScore: this.calculateFocusScore(sessionData),
-                    productivity: this.calculateProductivityScore(sessionData)
-                };
-
-                this.data.sessions.push(session);
-                this.updateStats();
-                this.checkAchievements(session);
-                this.save();
-            },
-
-            // Calculate Focus Score
-            calculateFocusScore(sessionData) {
-                const totalTime = sessionData.elapsedTime;
-                const breakTime = sessionData.breaks.reduce((acc, br) => acc + br.duration, 0);
-                const completionRate = this.calculateCompletionRate(sessionData.tasks);
-                
-                // Weight factors
-                const timeWeight = 0.4;
-                const breakWeight = 0.3;
-                const completionWeight = 0.3;
-
-                // Calculate individual scores
-                const timeScore = Math.min(totalTime / (45 * 60 * 1000), 1); // Normalize to 45 minutes
-                const breakScore = 1 - (breakTime / totalTime);
-                const taskScore = completionRate / 100;
-
-                return Math.round(
-                    (timeScore * timeWeight + 
-                     breakScore * breakWeight + 
-                     taskScore * completionWeight) * 100
-                );
-            },
-
-            // Calculate Productivity Score
-            calculateProductivityScore(sessionData) {
-                const completionRate = this.calculateCompletionRate(sessionData.tasks);
-                const focusScore = this.calculateFocusScore(sessionData);
-                const timeEfficiency = this.calculateTimeEfficiency(sessionData);
-
-                return Math.round((completionRate + focusScore + timeEfficiency) / 3);
-            },
-
-            // Calculate Time Efficiency
-            calculateTimeEfficiency(sessionData) {
-                const plannedDuration = sessionData.mode === 'timer' ? sessionData.totalTime : 0;
-                const actualDuration = sessionData.elapsedTime;
-                const breakTime = sessionData.breaks.reduce((acc, br) => acc + br.duration, 0);
-                const netDuration = actualDuration - breakTime;
-
-                if (plannedDuration === 0) return 100; // For stopwatch mode
-                return Math.min(100, Math.round((plannedDuration / netDuration) * 100));
-            },
-
-            // Update Statistics
-            updateStats() {
-                const stats = this.data.stats;
-                const sessions = this.data.sessions;
-
-                stats.totalTime = sessions.reduce((acc, s) => acc + s.duration, 0);
-                stats.totalSessions = sessions.length;
-                stats.completionRates = sessions.map(s => 
-                    this.calculateCompletionRate(s.tasks)
-                );
-                
-                stats.streakDays = this.calculateStreak();
-                stats.productiveHours = this.calculateProductiveHours();
-                stats.taskStats = this.calculateTaskStats();
-                stats.focusScores = sessions.map(s => s.focusScore);
-
-                this.updateUI();
-            },
-
-            // Save to LocalStorage
-            save() {
-                localStorage.setItem('studyAnalytics', JSON.stringify(this.data));
-            },
-
-            // Reset Statistics
-            reset() {
-                if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
-                    this.data = {
-                        sessions: [],
-                        achievements: [],
-                        stats: {
-                            totalTime: 0,
-                            totalSessions: 0,
-                            completionRates: [],
-                            streakDays: 0,
-                            productiveHours: Array(24).fill(0),
-                            taskStats: {},
-                            breakPatterns: [],
-                            focusScores: []
-                        }
-                    };
-                    this.save();
-                    this.updateUI();
-                }
+                    title: '',
+                    completed: false
+                });
+                renderTaskList();
             }
-        };
-
-        // Chart Management
-        const ChartManager = {
-            charts: {},
-
-            initCharts() {
-                this.createDailyPatternChart();
-                this.createFocusDistributionChart();
-                this.createProductivityTrendChart();
-            },
-
-            createDailyPatternChart() {
-                const ctx = document.getElementById('dailyPatternChart').getContext('2d');
-                this.charts.dailyPattern = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                        datasets: [{
-                            label: 'Study Hours',
-                            data: this.getDailyPatternData(),
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: document.body.classList.contains('dark') ? 
-                                        'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                                }
-                            }
-                        }
-                    }
-                });
-            },
-
-            createFocusDistributionChart() {
-                const ctx = document.getElementById('focusDistributionChart').getContext('2d');
-                this.charts.focusDistribution = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['High Focus', 'Medium Focus', 'Low Focus'],
-                        datasets: [{
-                            data: this.getFocusDistributionData(),
-                            backgroundColor: [
-                                '#10B981',
-                                '#FBBF24',
-                                '#EF4444'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: document.body.classList.contains('dark') ? '#fff' : '#000'
-                                }
-                            }
-                        }
-                    }
-                });
-            },
-
-            getDailyPatternData() {
-                const sessions = Analytics.data.sessions;
-                const dailyHours = Array(7).fill(0);
-                
-                sessions.forEach(session => {
-                    const day = new Date(session.date).getDay();
-                    dailyHours[day] += session.duration / (1000 * 60 * 60); // Convert to hours
-                });
-
-                return dailyHours;
-            },
-
-            getFocusDistributionData() {
-                const focusScores = Analytics.data.stats.focusScores;
-                let high = 0, medium = 0, low = 0;
-
-                focusScores.forEach(score => {
-                    if (score >= 80) high++;
-                    else if (score >= 50) medium++;
-                    else low++;
-                });
-
-                return [high, medium, low];
-            },
-
-            updateCharts() {
-                Object.values(this.charts).forEach(chart => chart.update());
+        }
+    
+        function renderTaskList() {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+    
+            taskList.innerHTML = state.tasks.map((task, index) => `
+                <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
+                    <input type="text" placeholder="Task ${index + 1}" value="${task.title}"
+                           onchange="updateTaskTitle(${task.id}, this.value)"
+                           class="w-full px-4 py-2 mb-3 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    <button onclick="addSubtask(${task.id})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                        Add Subtask
+                    </button>
+                </div>
+            `).join('');
+        }
+    
+        // View Management
+        function hideAllViews() {
+            ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'analyticsView'].forEach(viewId => {
+                const element = document.getElementById(viewId);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+        }
+    
+        function showView(viewId) {
+            hideAllViews();
+            const view = document.getElementById(viewId);
+            if (view) {
+                view.classList.remove('hidden');
             }
-        };
-
-        // Achievement System
-        const AchievementSystem = {
-            achievements: [
-                {
-                    id: 'first_hour',
-                    title: 'First Hour',
-                    description: 'Complete your first hour of studying',
-                    icon: '⏰',
-                    condition: (stats) => stats.totalTime >= 3600000
-                },
-                {
-                    id: 'focus_master',
-                    title: 'Focus Master',
-                    description: 'Achieve 90%+ focus score in a session',
-                    icon: '🎯',
-                    condition: (stats) => Math.max(...stats.focusScores) >= 90
-                },
-                {
-                    id: 'consistent_learner',
-                    title: 'Consistent Learner',
-                    description: 'Maintain a 7-day study streak',
-                    icon: '🔥',
-                    condition: (stats) => stats.streakDays >= 7
-                },
-                {
-                    id: 'task_champion',
-                    title: 'Task Champion',
-                    description: 'Complete 50 tasks',
-                    icon: '✅',
-                    condition: (stats) => Object.values(stats.taskStats)
-                        .reduce((acc, stat) => acc + stat.completed, 0) >= 50
-                },
-                {
-                    id: 'marathon_student',
-                    title: 'Marathon Student',
-                    description: 'Study for 4 hours in a single session',
-                    icon: '🏃',
-                    condition: (session) => session.duration >= 4 * 60 * 60 * 1000
-                }
-            ],
-
-            checkAchievements(session) {
-                const stats = Analytics.data.stats;
-                let newAchievements = [];
-
-                this.achievements.forEach(achievement => {
-                    if (!Analytics.data.achievements.includes(achievement.id)) {
-                        if (achievement.condition(stats) || 
-                            (achievement.condition(session) && achievement.condition(stats))) {
-                            Analytics.data.achievements.push(achievement.id);
-                            newAchievements.push(achievement);
-                        }
-                    }
-                });
-
-                if (newAchievements.length > 0) {
-                    this.showAchievementNotifications(newAchievements);
-                }
-            },
-
-            showAchievementNotifications(achievements) {
-                achievements.forEach(achievement => {
-                    alertify.success(`
-                        <div class="flex items-center">
-                            <span class="text-2xl mr-2">${achievement.icon}</span>
-                            <div>
-                                <div class="font-bold">${achievement.title}</div>
-                                <div class="text-sm">${achievement.description}</div>
-                            </div>
-                        </div>
-                    `, 5);
-                });
-            },
-
-            renderAchievements() {
-                const container = document.getElementById('achievementProgress');
-                if (!container) return;
-
-                container.innerHTML = this.achievements.map(achievement => `
-                    <div class="achievement-card ${Analytics.data.achievements.includes(achievement.id) ? 
-                        'bg-green-50 dark:bg-green-900' : 'bg-gray-50 dark:bg-gray-800'} 
-                        rounded-lg p-4 flex items-center">
-                        <span class="text-3xl mr-3">${achievement.icon}</span>
-                        <div>
-                            <h4 class="font-semibold text-gray-800 dark:text-white">${achievement.title}</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">${achievement.description}</p>
-                        </div>
-                        ${Analytics.data.achievements.includes(achievement.id) ? 
-                            '<span class="ml-auto text-green-500">✓</span>' : ''}
-                    </div>
-                `).join('');
-            }
-        };
-
-        // Productivity Insights
-        const ProductivityInsights = {
-            generateInsights() {
-                const stats = Analytics.data.stats;
-                const insights = [];
-
-                // Most productive time
-                const bestHour = stats.productiveHours.indexOf(Math.max(...stats.productiveHours));
-                insights.push({
-                    type: 'optimal_time',
-                    icon: '⏰',
-                    title: 'Best Study Time',
-                    message: `You're most productive at ${bestHour}:00`
-                });
-
-                // Break pattern analysis
-                const avgBreakTime = stats.breakPatterns.reduce((acc, br) => acc + br.duration, 0) / 
-                                   stats.breakPatterns.length;
-                insights.push({
-                    type: 'break_pattern',
-                    icon: '☕',
-                    title: 'Break Pattern',
-                    message: `Average break duration: ${Math.round(avgBreakTime / 60000)} minutes`
-                });
-
-                return insights;
-            },
-
-            renderInsights() {
-                const insights = this.generateInsights();
-                const container = document.getElementById('productiveTimeStats');
-                if (!container) return;
-
-                container.innerHTML = insights.map(insight => `
-                    <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <span class="text-2xl mr-3">${insight.icon}</span>
-                        <div>
-                            <h5 class="font-medium text-gray-800 dark:text-white">${insight.title}</h5>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">${insight.message}</p>
-                        </div>
-                    </div>
-                `).join('');
-            }
-        };
-
-        // Session Management
-        const SessionManager = {
-            currentSession: null,
-
-            initSession(mode, tasks, breakMode) {
-                this.currentSession = {
-                    id: Date.now(),
-                    mode,
-                    tasks,
-                    breakMode,
-                    startTime: null,
-                    elapsedTime: 0,
-                    totalTime: mode === 'timer' ? state.totalTime : 0,
-                    paused: true,
-                    breaks: [],
-                    focusScore: 100,
-                    lastPauseTime: null,
-                    distractionCount: 0
-                };
-
-                this.updateUI();
-                return this.currentSession;
-            },
-
-            startSession() {
-                if (!this.currentSession) return;
-                
-                this.currentSession.startTime = Date.now() - this.currentSession.elapsedTime;
-                this.currentSession.paused = false;
-                this.currentSession.lastPauseTime = null;
-
-                // Start focus monitoring
-                this.monitorFocus();
-                
-                // Update UI
-                this.updateUI();
-                this.startTimer();
-            },
-
-            pauseSession() {
-                if (!this.currentSession || this.currentSession.paused) return;
-
-                this.currentSession.paused = true;
-                this.currentSession.lastPauseTime = Date.now();
-                this.currentSession.elapsedTime = Date.now() - this.currentSession.startTime;
-
-                // Record break
-                this.currentSession.breaks.push({
-                    type: 'manual',
-                    startTime: Date.now(),
-                    duration: 0
-                });
-
-                // Update UI
-                this.updateUI();
-                this.stopTimer();
-            },
-
-            resumeSession() {
-                if (!this.currentSession || !this.currentSession.paused) return;
-
-                // Calculate break duration
-                if (this.currentSession.lastPauseTime) {
-                    const lastBreak = this.currentSession.breaks[this.currentSession.breaks.length - 1];
-                    if (lastBreak) {
-                        lastBreak.duration = Date.now() - lastBreak.startTime;
-                    }
-                }
-
-                // Adjust start time to maintain accurate elapsed time
-                this.currentSession.startTime = Date.now() - this.currentSession.elapsedTime;
-                this.currentSession.paused = false;
-                this.currentSession.lastPauseTime = null;
-
-                // Update UI
-                this.updateUI();
-                this.startTimer();
-            },
-
-            resetSession() {
-                if (!confirm('Are you sure you want to reset the current session? All progress will be lost.')) {
-                    return;
-                }
-
-                if (this.currentSession) {
-                    this.stopTimer();
-                    this.currentSession.elapsedTime = 0;
-                    this.currentSession.startTime = null;
-                    this.currentSession.paused = true;
-                    this.currentSession.breaks = [];
-                    this.currentSession.focusScore = 100;
-                    this.currentSession.tasks.forEach(task => {
-                        task.completed = false;
-                        task.subtasks.forEach(st => st.completed = false);
-                    });
-                }
-
-                this.updateUI();
-            },
-
-            completeSession() {
-                if (!this.currentSession) return;
-
-                this.stopTimer();
-                
-                // Calculate final stats
-                const finalStats = {
-                    duration: this.currentSession.elapsedTime,
-                    breaks: this.currentSession.breaks,
-                    focusScore: this.currentSession.focusScore,
-                    completionRate: this.calculateCompletionRate(),
-                    tasks: this.currentSession.tasks
-                };
-
-                // Save to analytics
-                Analytics.saveSession({
-                    ...this.currentSession,
-                    ...finalStats
-                });
-
-                // Generate report
-                this.generateReport(finalStats);
-
-                // Check achievements
-                AchievementSystem.checkAchievements({
-                    duration: finalStats.duration,
-                    focusScore: finalStats.focusScore,
-                    completionRate: finalStats.completionRate
-                });
-
-                // Clear current session
-                this.currentSession = null;
-
-                // Show report view
-                showView('reportView');
-            },
-
-            startTimer() {
-                if (state.timer) {
-                    clearInterval(state.timer);
-                }
-                state.timer = setInterval(() => this.updateTimer(), 1000);
-            },
-
-            stopTimer() {
-                if (state.timer) {
-                    clearInterval(state.timer);
-                    state.timer = null;
-                }
-            },
-
-            updateTimer() {
-                if (!this.currentSession || this.currentSession.paused) return;
-
-                const now = Date.now();
-                this.currentSession.elapsedTime = now - this.currentSession.startTime;
-
-                // Update time display
-                this.updateTimeDisplay();
-
-                // Check for scheduled breaks
-                this.checkForScheduledBreak();
-
-                // Update focus score based on session duration
-                this.updateFocusScore();
-
-                // Check for session completion (if timer mode)
-                if (this.currentSession.mode === 'timer' && 
-                    this.currentSession.elapsedTime >= this.currentSession.totalTime) {
-                    this.handleTimerCompletion();
-                }
-            },
-
-            updateTimeDisplay() {
-                const timeDisplay = document.getElementById('timeDisplay');
-                if (!timeDisplay) return;
-
-                const timeToShow = this.currentSession.mode === 'timer' 
-                    ? Math.max(0, this.currentSession.totalTime - this.currentSession.elapsedTime)
-                    : this.currentSession.elapsedTime;
-
-                timeDisplay.textContent = this.formatTime(timeToShow);
-
-                // Update progress bar
-                const progress = document.getElementById('timeProgress');
-                if (progress && this.currentSession.mode === 'timer') {
-                    const percentage = Math.min(100, 
-                        (this.currentSession.elapsedTime / this.currentSession.totalTime) * 100);
-                    progress.style.width = `${percentage}%`;
-                }
-            },
-
-            formatTime(ms) {
-                const hours = Math.floor(ms / (1000 * 60 * 60));
-                const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            },
-
-            checkForScheduledBreak() {
-                if (!this.currentSession.breakMode || this.currentSession.breakMode === 'none') return;
-
-                const workDuration = this.currentSession.breakMode === 'pomodoro' ? 25 : 50;
-                const breakDuration = this.currentSession.breakMode === 'pomodoro' ? 5 : 10;
-
-                const elapsedMinutes = this.currentSession.elapsedTime / (1000 * 60);
-                const cyclePosition = elapsedMinutes % (workDuration + breakDuration);
-
-                if (cyclePosition >= workDuration && !this.currentSession.paused) {
-                    this.startBreak(breakDuration);
-                }
-            },
-
-            startBreak(duration) {
-                this.pauseSession();
-                
-                alertify.alert('Break Time!', 
-                    `Time for a ${duration} minute break! Take a rest and stretch.`,
-                    () => {
-                        setTimeout(() => {
-                            if (this.currentSession && this.currentSession.paused) {
-                                this.resumeSession();
-                            }
-                        }, duration * 60 * 1000);
-                    }
-                );
-            },
-
-            updateFocusScore() {
-                if (!this.currentSession) return;
-
-                // Base score decay
-                const elapsedMinutes = this.currentSession.elapsedTime / (1000 * 60);
-                const baseDecay = Math.floor(elapsedMinutes / 30) * 5; // -5 points every 30 minutes
-
-                // Break bonus
-                const breakBonus = this.currentSession.breaks.reduce((bonus, breakItem) => {
-                    const breakMinutes = breakItem.duration / (1000 * 60);
-                    return bonus + (breakMinutes >= 5 ? 10 : 5); // +10 for proper breaks, +5 for short breaks
-                }, 0);
-
-                // Distraction penalty
-                const distractionPenalty = this.currentSession.distractionCount * 2;
-
-                // Calculate final score
-                this.currentSession.focusScore = Math.max(0, Math.min(100,
-                    100 - baseDecay + breakBonus - distractionPenalty
-                ));
-
-                // Update UI
-                const focusScoreElement = document.getElementById('focusScore');
-                if (focusScoreElement) {
-                    focusScoreElement.textContent = `${this.currentSession.focusScore}%`;
-                }
-            },
-
-            handleTimerCompletion() {
-                this.stopTimer();
-
-                if (this.calculateCompletionRate() < 100) {
-                    alertify.confirm(
-                        'Time\'s Up!',
-                        'You still have incomplete tasks. Would you like to extend the session?',
-                        () => {
-                            this.currentSession.totalTime += 15 * 60 * 1000; // Add 15 minutes
-                            this.startTimer();
-                        },
-                        () => {
-                            this.completeSession();
-                        }
-                    );
-                } else {
-                    this.completeSession();
-                }
-            },
-
-            calculateCompletionRate() {
-                if (!this.currentSession) return 0;
-
-                const tasks = this.currentSession.tasks;
-                const totalTasks = tasks.reduce((acc, task) => 
-                    acc + task.subtasks.length + 1, 0);
-                const completedTasks = tasks.reduce((acc, task) => 
-                    acc + (task.completed ? task.subtasks.length + 1 : 
-                        task.subtasks.filter(st => st.completed).length), 0);
-
-                return Math.round((completedTasks / totalTasks) * 100);
-            },
-
-            monitorFocus() {
-                // Track window blur events (tab switching, etc.)
-                window.addEventListener('blur', () => {
-                    if (this.currentSession && !this.currentSession.paused) {
-                        this.currentSession.distractionCount++;
-                        this.updateFocusScore();
-                    }
-                });
-
-                // Track visibility changes
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden && this.currentSession && !this.currentSession.paused) {
-                        this.currentSession.distractionCount++;
-                        this.updateFocusScore();
-                    }
-                });
-            },
-
-            generateReport(stats) {
-                const reportContent = document.getElementById('reportContent');
-                if (!reportContent) return;
-
-                const productivityScore = this.calculateProductivityScore(stats);
-                const breakAnalysis = this.analyzeBreaks(stats.breaks);
-
-                reportContent.innerHTML = `
-                    <div class="space-y-6">
-                        <!-- Summary Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="stat-card">
-                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Time</h4>
-                                <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                                    ${this.formatTime(stats.duration)}
-                                </p>
-                            </div>
-                            <div class="stat-card">
-                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Focus Score</h4>
-                                <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                                    ${stats.focusScore}%
-                                </p>
-                            </div>
-                            <div class="stat-card">
-                                <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Productivity</h4>
-                                <p class="text-3xl font-bold text-green-600 dark:text-green-400">
-                                    ${productivityScore}%
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Break Analysis -->
-                        <div class="card p-4">
-                            <h3 class="text-lg font-bold mb-3 text-gray-800 dark:text-white">Break Analysis</h3>
-                            <div class="space-y-2">
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    Total Breaks: ${breakAnalysis.totalBreaks}
-                                </p>
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    Average Break Duration: ${breakAnalysis.averageDuration} minutes
-                                </p>
-                                <p class="text-gray-600 dark:text-gray-300">
-                                    Break Pattern: ${breakAnalysis.pattern}
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Task Summary -->
-                        <div class="card p-4">
-                            <h3 class="text-lg font-bold mb-3 text-gray-800 dark:text-white">Task Summary</h3>
-                            <div class="space-y-4">
-                                ${stats.tasks.map(task => `
-                                    <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="font-medium text-gray-800 dark:text-white">
-                                                ${task.title}
-                                            </span>
-                                            <span class="text-sm ${task.completed ? 
-                                                'text-green-600 dark:text-green-400' : 
-                                                'text-red-600 dark:text-red-400'}">
-                                                ${task.completed ? 'Completed' : 'Incomplete'}
-                                            </span>
-                                        </div>
-                                        ${task.subtasks.length > 0 ? `
-                                            <div class="ml-4 space-y-1">
-                                                ${task.subtasks.map(subtask => `
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-sm text-gray-600 dark:text-gray-300">
-                                                            ${subtask.title}
-                                                        </span>
-                                                        <span class="text-sm ${subtask.completed ? 
-                                                            'text-green-600 dark:text-green-400' : 
-                                                            'text-red-600 dark:text-red-400'}">
-                                                            ${subtask.completed ? '✓' : '×'}
-                                                        </span>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <!-- Suggestions -->
-                        <div class="card p-4">
-                            <h3 class="text-lg font-bold mb-3 text-gray-800 dark:text-white">
-                                Suggestions for Next Session
-                            </h3>
-                            <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-300">
-                                ${this.generateSuggestions(stats).map(suggestion => `
-                                    <li>${suggestion}</li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                `;
-            },
-
-            calculateProductivityScore(stats) {
-                const weights = {
-                    completion: 0.4,
-                    focus: 0.3,
-                    timeManagement: 0.3
-                };
-
-                const completionScore = stats.completionRate;
-                const focusScore = stats.focusScore;
-                const timeManagementScore = this.calculateTimeManagementScore(stats);
-
-                return Math.round(
-                    completionScore * weights.completion +
-                    focusScore * weights.focus +
-                    timeManagementScore * weights.timeManagement
-                );
-            },
-
-            calculateTimeManagementScore(stats) {
-                const totalBreakTime = stats.breaks.reduce((total, br) => total + br.duration, 0);
-                const effectiveWorkTime = stats.duration - totalBreakTime;
-                const idealBreakRatio = 0.2; // 20% of total time should be breaks
-                const actualBreakRatio = totalBreakTime / stats.duration;
-                
-                // Score based on how close the actual break ratio is to ideal
-                const breakScore = 100 - Math.abs(idealBreakRatio - actualBreakRatio) * 100;
-                
-                // Score based on work session length between breaks
-                const avgWorkSession = effectiveWorkTime / (stats.breaks.length + 1);
-                const idealWorkSession = 25 * 60 * 1000; // 25 minutes
-                const sessionScore = 100 - Math.min(100, Math.abs(avgWorkSession - idealWorkSession) / 
-                    (idealWorkSession) * 100);
-
-                return Math.round((breakScore + sessionScore) / 2);
-            },
-
-            analyzeBreaks(breaks) {
-                const totalBreaks = breaks.length;
-                const totalBreakTime = breaks.reduce((total, br) => total + br.duration, 0);
-                const avgDuration = Math.round(totalBreakTime / (totalBreaks * 60 * 1000) * 10) / 10;
-
-                let pattern = 'Irregular';
-                if (breaks.length >= 2) {
-                    const intervals = [];
-                    for (let i = 1; i < breaks.length; i++) {
-                        intervals.push(breaks[i].startTime - 
-                            (breaks[i-1].startTime + breaks[i-1].duration));
-                    }
-                    
-                    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-                    const variance = intervals.reduce((acc, interval) => 
-                        acc + Math.pow(interval - avgInterval, 2), 0) / intervals.length;
-                    
-                    if (variance < 5 * 60 * 1000) { // 5 minutes variance
-                        pattern = 'Consistent';
-                    } else if (variance < 15 * 60 * 1000) {
-                        pattern = 'Somewhat Regular';
-                    }
-                }
-
-                return {
-                    totalBreaks,
-                    averageDuration: avgDuration,
-                    pattern
-                };
-            },
-
-            generateSuggestions(stats) {
-                const suggestions = [];
-
-                if (stats.focusScore < 70) {
-                    suggestions.push('Consider taking more regular breaks to maintain focus');
-                }
-
-                if (stats.completionRate < 80) {
-                    suggestions.push('Try breaking down tasks into smaller, more manageable subtasks');
-                }
-
-                if (stats.breaks.length === 0) {
-                    suggestions.push('Include regular breaks in your study sessions for better productivity');
-                } else if (this.calculateTimeManagementScore(stats) < 70) {
-                    suggestions.push('Aim for more balanced work-break intervals (25 min work / 5 min break)');
-                }
-
-                return suggestions;
-            },
-
-            updateUI() {
-                this.updateTimeDisplay();
-                this.updateTaskDisplay();
-                this.updateProgressBars();
-                this.updateStatusIndicators();
-            }
-        };
-
-        // Event Handlers and App Initialization
+        }
+    
+        // Login Persistence
         document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('user')) {
+                showLoggedInState(localStorage.getItem('user'));
+                showView('modeSelection');
+            } else {
+                showView('loginForm');
+            }
             initializeApp();
-            attachEventListeners();
-            applyStoredTheme();
-            checkLoginStatus();
         });
-
-        function initializeApp() {
-            Analytics.init();
-            if (state.darkMode) {
-                document.body.classList.add('dark');
-            }
-        }
-
-        function attachEventListeners() {
-            // Theme toggle
-            document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-
-            // Login form
-            document.getElementById('username')?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') login();
-            });
-
-            // Break mode selector
-            document.getElementById('breakMode')?.addEventListener('change', (e) => {
-                const customSettings = document.getElementById('customBreakSettings');
-                if (customSettings) {
-                    customSettings.classList.toggle('hidden', e.target.value !== 'custom');
-                }
-            });
-
-            // Window focus events for distraction tracking
-            window.addEventListener('blur', () => {
-                if (SessionManager.currentSession && !SessionManager.currentSession.paused) {
-                    SessionManager.currentSession.distractionCount++;
-                    alertify.warning('Stay focused! Switching tasks reduces productivity.');
-                }
-            });
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', handleKeyboardShortcuts);
-        }
-
-        function handleKeyboardShortcuts(e) {
-            // Only handle shortcuts if a session is active
-            if (!SessionManager.currentSession) return;
-
-            // Space bar: toggle timer
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                toggleTimer();
-            }
-
-            // Ctrl/Cmd + B: quick break
-            if ((e.ctrlKey || e.metaKey) && e.code === 'KeyB') {
-                e.preventDefault();
-                if (!SessionManager.currentSession.paused) {
-                    SessionManager.startBreak(5);
-                }
-            }
-        }
-
-        function toggleTheme() {
-            state.darkMode = !state.darkMode;
-            document.body.classList.toggle('dark');
-            localStorage.setItem('darkMode', state.darkMode);
-            
-            // Update charts if they exist
-            if (ChartManager.charts) {
-                ChartManager.updateCharts();
-            }
-        }
-
-        function applyStoredTheme() {
-            const storedTheme = localStorage.getItem('darkMode');
-            if (storedTheme === 'true') {
-                document.body.classList.add('dark');
-                state.darkMode = true;
-            }
-        }
-
+    
         function login() {
             const username = document.getElementById('username').value.trim();
-            if (!username) {
+            if (username) {
+                localStorage.setItem('user', username);
+                showLoggedInState(username);
+                showView('modeSelection');
+            } else {
                 alertify.error('Please enter a username');
-                return;
             }
-
-            localStorage.setItem('user', username);
-            showLoggedInState(username);
-            Analytics.init(); // Load user's analytics data
         }
-
+    
         function showLoggedInState(username) {
-            // Update UI elements
             document.getElementById('userInfo').textContent = `Welcome, ${username}`;
             document.getElementById('userInfo').classList.remove('hidden');
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('analyticsBtn').classList.remove('hidden');
-            document.getElementById('modeSelection').classList.remove('hidden');
         }
-
-        function checkLoginStatus() {
-            const user = localStorage.getItem('user');
-            if (user) {
-                showLoggedInState(user);
-            }
-        }
-
+    
         function logout() {
-            if (SessionManager.currentSession) {
-                if (!confirm('You have an active session. Are you sure you want to logout? Your progress will be lost.')) {
-                    return;
-                }
-            }
-            
             localStorage.removeItem('user');
             location.reload();
         }
-
-        function selectMode(mode) {
-            state.mode = mode;
-            hideAllViews();
-            document.getElementById('setupForm').classList.remove('hidden');
-            if (mode === 'timer') {
-                document.getElementById('timerSetup').classList.remove('hidden');
-            }
-        }
-
+    
+        // Session Management
         function startSession() {
-            // Validate inputs
             if (state.mode === 'timer') {
                 const hours = parseInt(document.getElementById('hours').value) || 0;
                 const minutes = parseInt(document.getElementById('minutes').value) || 0;
@@ -1869,117 +793,46 @@ function attachEventListeners() {
                 }
                 state.totalTime = (hours * 60 + minutes) * 60 * 1000;
             }
-
+    
             if (state.tasks.length === 0) {
                 alertify.error('Please add at least one task');
                 return;
             }
-
+    
             // Initialize session
             const breakMode = document.getElementById('breakMode').value;
-            const session = SessionManager.initSession(state.mode, state.tasks, breakMode);
-
-            // Update UI
+            if (['pomodoro', 'long', 'none'].includes(breakMode)) {
+                state.breakMode = breakMode;
+            } else {
+                state.breakMode = 'none';  // Default to no breaks if not specified
+            }
+    
+            // Start the session
             hideAllViews();
             document.getElementById('sessionView').classList.remove('hidden');
-            
-            // Start session if auto-start is enabled
-            if (document.getElementById('autoStart')?.checked) {
-                SessionManager.startSession();
-            }
+            SessionManager.initSession(state.mode, state.tasks, state.breakMode);
+            SessionManager.startSession();
         }
-
-        function toggleTimer() {
-            if (!SessionManager.currentSession) return;
-
-            if (SessionManager.currentSession.paused) {
-                SessionManager.resumeSession();
-            } else {
-                SessionManager.pauseSession();
-            }
-        }
-
-        function resetSession() {
-            SessionManager.resetSession();
-        }
-
-        function completeSession() {
-            SessionManager.completeSession();
-        }
-
-        function hideAllViews() {
-            const views = [
-                'loginForm',
-                'modeSelection',
-                'setupForm',
-                'sessionView',
-                'reportView',
-                'analyticsView'
-            ];
-            
-            views.forEach(view => {
-                document.getElementById(view)?.classList.add('hidden');
-            });
-        }
-
-        function showView(viewId) {
-            hideAllViews();
-            document.getElementById(viewId)?.classList.remove('hidden');
-        }
-
+    
+        // Analytics and Break Settings
         function toggleAnalyticsView() {
-            const stats = Analytics.getStats();
-            if (!stats) {
-                alertify.error('No session data available yet');
-                return;
-            }
-
+            Analytics.init();
             showView('analyticsView');
-            ChartManager.initCharts();
-            ProductivityInsights.renderInsights();
-            AchievementSystem.renderAchievements();
         }
-
-        function resetStatistics() {
-            if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
-                Analytics.reset();
-                alertify.success('Statistics have been reset');
-                showView('modeSelection');
+    
+        function initializeApp() {
+            if (state.darkMode) {
+                document.body.classList.add('dark');
             }
         }
-
-        function exportAnalytics(format) {
-            const stats = Analytics.getStats();
-            if (!stats) {
-                alertify.error('No data to export');
-                return;
+    
+        // Break Mode Management (Custom Option Removed)
+        document.getElementById('breakMode')?.addEventListener('change', (e) => {
+            const customSettings = document.getElementById('customBreakSettings');
+            if (customSettings) {
+                customSettings.classList.add('hidden');
             }
-
-            if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Add content to PDF
-                doc.setFont('helvetica');
-                doc.setFontSize(20);
-                doc.text('Study Timer Analytics Report', 20, 20);
-                
-                doc.setFontSize(12);
-                doc.text(`Total Study Time: ${formatTime(stats.totalTime)}`, 20, 40);
-                doc.text(`Total Sessions: ${stats.totalSessions}`, 20, 50);
-                doc.text(`Average Completion Rate: ${stats.averageCompletionRate.toFixed(1)}%`, 20, 60);
-                
-                doc.save('study-analytics.pdf');
-                alertify.success('Analytics exported successfully');
-            }
-        }
-
-        function formatTime(ms) {
-            const hours = Math.floor(ms / (1000 * 60 * 60));
-            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
+        });
     </script>
 </body>
 </html>
