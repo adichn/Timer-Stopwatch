@@ -38,19 +38,22 @@
         .dark .theme-toggle {
             color: #ffffff;
         }
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
-<body class="transition-colors duration-200 bg-gray-50 dark:bg-custom-dark min-h-screen">
+<body class="bg-gray-50 min-h-screen">
     <!-- Navbar -->
-    <nav id="navbar" class="fixed w-full top-0 z-50 shadow-md transition-colors duration-200 bg-white dark:bg-custom-dark">
+    <nav class="fixed w-full top-0 z-50 shadow-md bg-white dark:bg-custom-dark">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <h1 class="text-xl font-bold dark:text-custom-light">Study Time Organizer</h1>
             <div class="flex items-center space-x-4">
                 <span id="userDisplay" class="dark:text-custom-light hidden"></span>
-                <button id="themeToggle" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 theme-toggle hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                <button onclick="toggleTheme()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 theme-toggle hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     Toggle Theme
                 </button>
-                <button id="signOutBtn" class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors hidden">
+                <button id="signOutBtn" onclick="handleSignOut()" class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors hidden">
                     Sign Out
                 </button>
             </div>
@@ -67,9 +70,10 @@
                     id="username" 
                     placeholder="Enter your username"
                     class="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+                    onkeypress="handleEnterKey(event)"
                 >
                 <button 
-                    id="loginBtn"
+                    onclick="handleLogin()"
                     class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
                     Sign In
@@ -78,31 +82,16 @@
         </div>
     </div>
 
-    <!-- History View -->
-    <div id="historyView" class="container mx-auto p-8 pt-20 hidden">
-        <div class="bg-white dark:bg-custom-card rounded-xl shadow-lg p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold dark:text-custom-light">Study History</h2>
-                <button onclick="closeHistory()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors dark:text-custom-light">
-                    Close
-                </button>
+    <!-- Mode Selection -->
+    <div id="modeSelection" class="container mx-auto p-8 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="p-8 rounded-xl shadow-lg bg-white dark:bg-custom-card cursor-pointer hover:shadow-xl transition-all transform hover:-translate-y-1" onclick="selectMode('timer')">
+                <h2 class="text-2xl font-bold mb-4 dark:text-custom-light">Timer Mode</h2>
+                <p class="text-gray-600 dark:text-gray-400">Set a specific time limit for your study session</p>
             </div>
-            
-            <!-- Analytics Charts -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4 dark:text-custom-light">Study Time by Day</h3>
-                    <canvas id="timeChart"></canvas>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-4 dark:text-custom-light">Task Completion Rate</h3>
-                    <canvas id="taskChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Session History List -->
-            <div id="sessionsList" class="space-y-4">
-                <!-- Sessions will be inserted here -->
+            <div class="p-8 rounded-xl shadow-lg bg-white dark:bg-custom-card cursor-pointer hover:shadow-xl transition-all transform hover:-translate-y-1" onclick="selectMode('stopwatch')">
+                <h2 class="text-2xl font-bold mb-4 dark:text-custom-light">Stopwatch Mode</h2>
+                <p class="text-gray-600 dark:text-gray-400">Track your study time without limits</p>
             </div>
         </div>
     </div>
@@ -147,591 +136,594 @@
         </div>
     </div>
 
-    <!-- Session View -->
-    <div id="sessionView" class="container mx-auto p-8 hidden">
-        <div class="bg-white dark:bg-custom-card rounded-xl shadow-lg p-6">
-            <div class="text-center mb-6">
-                <h2 id="timeDisplay" class="text-5xl font-bold dark:text-custom-light mb-4">00:00:00</h2>
-                <div class="mt-4">
-                    <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
-                        <div id="timeProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-center space-x-4 mb-6">
-                <button id="startPauseBtn" onclick="toggleTimer()" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                    Start
-                </button>
-                <button onclick="resetSession()" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                    Reset
-                </button>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-xl font-bold mb-4 dark:text-custom-light">Task Progress</h3>
+<!-- Session View -->
+<div id="sessionView" class="container mx-auto p-8 hidden">
+    <div class="bg-white dark:bg-custom-card rounded-xl shadow-lg p-6">
+        <div class="text-center mb-6">
+            <h2 id="timeDisplay" class="text-5xl font-bold dark:text-custom-light mb-4">00:00:00</h2>
+            <div class="mt-4">
                 <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
-                    <div id="taskProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div id="timeProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
             </div>
+        </div>
 
-            <div id="taskDisplay" class="space-y-4"></div>
+        <div class="flex justify-center space-x-4 mb-6">
+            <button id="startPauseBtn" onclick="toggleTimer()" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                Start
+            </button>
+            <button onclick="resetSession()" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                Reset
+            </button>
+        </div>
 
-            <button onclick="completeSession()" class="mt-6 px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors w-full">
-                Complete Everything
+        <div class="mb-6">
+            <h3 class="text-xl font-bold mb-4 dark:text-custom-light">Task Progress</h3>
+            <div class="w-full bg-gray-200 rounded-full h-3 dark:bg-gray-700">
+                <div id="taskProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="taskDisplay" class="space-y-4"></div>
+
+        <button onclick="completeSession()" class="mt-6 px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors w-full">
+            Complete Everything
+        </button>
+    </div>
+</div>
+
+<!-- Report View -->
+<div id="reportView" class="container mx-auto p-8 hidden">
+    <div class="bg-white dark:bg-custom-card rounded-xl shadow-lg p-6">
+        <h2 class="text-2xl font-bold mb-6 dark:text-custom-light">Session Report</h2>
+        <div id="reportContent" class="space-y-4"></div>
+        <div class="mt-6 flex space-x-4">
+            <button onclick="downloadReport()" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex-1">
+                Download PDF
+            </button>
+            <button onclick="startNewSession()" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex-1">
+                Start New Session
             </button>
         </div>
     </div>
+</div>
 
-    <!-- Report View -->
-    <div id="reportView" class="container mx-auto p-8 hidden">
-        <div class="bg-white dark:bg-custom-card rounded-xl shadow-lg p-6">
-            <h2 class="text-2xl font-bold mb-6 dark:text-custom-light">Session Report</h2>
-            <div id="reportContent" class="space-y-4"></div>
-            <div class="mt-6 flex space-x-4">
-                <button onclick="downloadReport()" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex-1">
-                    Download PDF
-                </button>
-                <button onclick="startNewSession()" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex-1">
-                    Start New Session
-                </button>
-            </div>
-        </div>
-    </div>
+<script>
+    // Global state
+    let state = {
+        mode: null,
+        darkMode: localStorage.getItem('darkMode') === 'true',
+        tasks: [],
+        currentTask: 0,
+        timer: null,
+        startTime: null,
+        totalTime: 0,
+        elapsedTime: 0,
+        paused: true,
+        taskTimes: {},
+        breakMode: null,
+        nextBreak: null,
+        nextReminder: Date.now() + 30 * 60 * 1000,
+        nextMealReminder: Date.now() + 2 * 60 * 60 * 1000
+    };
 
-    <script>
-        // Global state
-        let state = {
-            mode: null,
-            darkMode: localStorage.getItem('darkMode') === 'true',
-            tasks: [],
-            currentTask: 0,
-            timer: null,
-            startTime: null,
-            totalTime: 0,
-            elapsedTime: 0,
-            paused: true,
-            taskTimes: {},
-            breakMode: null,
-            nextBreak: null,
-            nextReminder: Date.now() + 30 * 60 * 1000,
-            nextMealReminder: Date.now() + 2 * 60 * 60 * 1000
-        };
-
-        // User Management System
-        const UserManager = {
-            currentUser: null,
-
-            init() {
-                const savedUser = localStorage.getItem('currentUser');
-                if (savedUser) {
-                    this.currentUser = JSON.parse(savedUser);
-                    this.updateUIForLoggedInUser();
-                    return true;
-                }
-                return false;
-            },
-
-            signIn(username) {
-                if (!username) {
-                    alertify.error('Please enter a username');
-                    return false;
-                }
-                
-                const userData = {
-                    username,
-                    id: Date.now(),
-                    joinedDate: new Date().toISOString()
-                };
-                this.currentUser = userData;
-                localStorage.setItem('currentUser', JSON.stringify(userData));
-                this.updateUIForLoggedInUser();
-                return true;
-            },
-
-            signOut() {
-                this.currentUser = null;
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('currentSession');
-                window.location.reload();
-            },
-
-            updateUIForLoggedInUser() {
-                if (this.currentUser) {
-                    document.getElementById('userDisplay').textContent = `Welcome, ${this.currentUser.username}`;
-                    document.getElementById('userDisplay').classList.remove('hidden');
-                    document.getElementById('signOutBtn').classList.remove('hidden');
-                    document.getElementById('loginForm').classList.add('hidden');
-                    document.getElementById('modeSelection').classList.remove('hidden');
-                }
-            }
-        };
-
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize theme
-            if (state.darkMode) {
-                document.body.classList.add('dark');
-            }
-
-            // Theme toggle button
-            document.getElementById('themeToggle').addEventListener('click', () => {
-                state.darkMode = !state.darkMode;
-                document.body.classList.toggle('dark');
-                localStorage.setItem('darkMode', state.darkMode);
-            });
-
-            // Login button
-            document.getElementById('loginBtn').addEventListener('click', () => {
-                const username = document.getElementById('username').value.trim();
-                UserManager.signIn(username);
-            });
-
-            // Sign out button
-            document.getElementById('signOutBtn').addEventListener('click', () => {
-                UserManager.signOut();
-            });
-
-            // Enter key on username input
-            document.getElementById('username').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const username = e.target.value.trim();
-                    UserManager.signIn(username);
-                }
-            });
-
-            // Initialize user session
-            UserManager.init();
-        });
-        
-        // Session Manager
-        const SessionManager = {
-            currentSession: null,
-            savedSessions: [],
-        
-            initSession(mode, tasks, breakMode) {
-                this.currentSession = {
-                    id: Date.now(),
-                    userId: UserManager.currentUser?.id,
-                    mode,
-                    tasks,
-                    breakMode,
-                    startTime: null,
-                    endTime: null,
-                    totalTime: 0,
-                    elapsedTime: 0,
-                    paused: true,
-                    taskTimes: {},
-                    timestamps: {
-                        pauses: [],
-                        breaks: []
-                    }
-                };
-                this.saveCurrentSession();
-            },
-        
-            saveCurrentSession() {
-                if (this.currentSession) {
-                    localStorage.setItem('currentSession', JSON.stringify(this.currentSession));
-                }
-            },
-        
-            loadCurrentSession() {
-                const savedSession = localStorage.getItem('currentSession');
-                if (savedSession) {
-                    this.currentSession = JSON.parse(savedSession);
-                    return true;
-                }
-                return false;
-            },
-        
-            clearCurrentSession() {
-                this.currentSession = null;
-                localStorage.removeItem('currentSession');
-            },
-        
-            completeSession() {
-                if (this.currentSession) {
-                    this.currentSession.endTime = new Date().toISOString();
-                    this.savedSessions.push(this.currentSession);
-                    this.saveSessions();
-                    this.clearCurrentSession();
-                }
-            },
-        
-            saveSessions() {
-                if (UserManager.currentUser) {
-                    localStorage.setItem(
-                        `sessions_${UserManager.currentUser.id}`,
-                        JSON.stringify(this.savedSessions)
-                    );
-                }
-            },
-        
-            loadSavedSessions() {
-                if (UserManager.currentUser) {
-                    const saved = localStorage.getItem(`sessions_${UserManager.currentUser.id}`);
-                    if (saved) {
-                        this.savedSessions = JSON.parse(saved);
-                    }
-                }
-            }
-        };
-        
-        // Analytics Manager
-        const AnalyticsManager = {
-            initCharts() {
-                this.createTimeChart();
-                this.createTaskChart();
-            },
-        
-            createTimeChart() {
-                const ctx = document.getElementById('timeChart').getContext('2d');
-                const data = this.getTimeChartData();
-                
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.labels,
-                        datasets: [{
-                            label: 'Study Hours',
-                            data: data.values,
-                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            },
-        
-            createTaskChart() {
-                const ctx = document.getElementById('taskChart').getContext('2d');
-                const data = this.getTaskCompletionData();
-                
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.labels,
-                        datasets: [{
-                            label: 'Completion Rate (%)',
-                            data: data.values,
-                            backgroundColor: 'rgba(16, 185, 129, 0.5)',
-                            borderColor: 'rgba(16, 185, 129, 1)',
-                            borderWidth: 2,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
-                            }
-                        }
-                    }
-                });
-            },
-        
-            getTimeChartData() {
-                const sessions = SessionManager.savedSessions;
-                const lastWeek = {};
-                
-                // Initialize last 7 days
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
-                    lastWeek[dateStr] = 0;
-                }
-        
-                // Aggregate session times
-                sessions.forEach(session => {
-                    const date = new Date(session.endTime);
-                    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
-                    if (lastWeek.hasOwnProperty(dateStr)) {
-                        lastWeek[dateStr] += session.elapsedTime / (1000 * 60 * 60); // Convert to hours
-                    }
-                });
-        
-                return {
-                    labels: Object.keys(lastWeek),
-                    values: Object.values(lastWeek)
-                };
-            },
-        
-            getTaskCompletionData() {
-                const sessions = SessionManager.savedSessions;
-                const completionRates = sessions.map(session => {
-                    const totalTasks = session.tasks.reduce((acc, task) => 
-                        acc + task.subtasks.length + 1, 0);
-                    const completedTasks = session.tasks.reduce((acc, task) => 
-                        acc + (task.completed ? task.subtasks.length + 1 : 
-                            task.subtasks.filter(st => st.completed).length), 0);
-                    return (completedTasks / totalTasks) * 100;
-                });
-        
-                return {
-                    labels: sessions.map((_, index) => `Session ${index + 1}`),
-                    values: completionRates
-                };
-            }
-        };
-        
-        // Event Handlers
-        function handleLogin() {
-            const username = document.getElementById('username').value.trim();
-            if (username) {
-                UserManager.signIn(username);
-                SessionManager.loadSavedSessions();
-            } else {
-                alertify.error('Please enter a username');
-            }
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        if (state.darkMode) {
+            document.body.classList.add('dark');
         }
-        
-        function showHistory() {
-            document.getElementById('modeSelection').classList.add('hidden');
-            document.getElementById('setupForm').classList.add('hidden');
-            document.getElementById('sessionView').classList.add('hidden');
-            document.getElementById('reportView').classList.add('hidden');
-            document.getElementById('historyView').classList.remove('hidden');
-            
-            renderSessionHistory();
-            AnalyticsManager.initCharts();
-        }
-        
-        function closeHistory() {
-            document.getElementById('historyView').classList.add('hidden');
+        checkLoggedInStatus();
+    });
+
+    // Theme toggle
+    function toggleTheme() {
+        state.darkMode = !state.darkMode;
+        document.body.classList.toggle('dark');
+        localStorage.setItem('darkMode', state.darkMode);
+    }
+
+    // User Management
+    function checkLoggedInStatus() {
+        const user = localStorage.getItem('currentUser');
+        if (user) {
+            const userData = JSON.parse(user);
+            document.getElementById('userDisplay').textContent = `Welcome, ${userData.username}`;
+            document.getElementById('userDisplay').classList.remove('hidden');
+            document.getElementById('signOutBtn').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('modeSelection').classList.remove('hidden');
         }
-        
-        function renderSessionHistory() {
-            const sessionsList = document.getElementById('sessionsList');
-            sessionsList.innerHTML = SessionManager.savedSessions.map((session, index) => `
-                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <h4 class="text-lg font-semibold dark:text-custom-light">Session ${index + 1}</h4>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">
-                            ${new Date(session.startTime).toLocaleDateString()}
-                        </span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm dark:text-gray-300">Duration: ${formatTime(session.elapsedTime)}</p>
-                            <p class="text-sm dark:text-gray-300">Mode: ${session.mode}</p>
-                    <p class="text-sm dark:text-gray-300">Break Mode: ${session.breakMode}</p>
-                </div>
-                <div>
-                    <p class="text-sm dark:text-gray-300">Tasks Completed: ${
-                        session.tasks.filter(t => t.completed).length
-                    }/${session.tasks.length}</p>
-                    <p class="text-sm dark:text-gray-300">Subtasks Completed: ${
-                        session.tasks.reduce((acc, task) => 
-                            acc + task.subtasks.filter(st => st.completed).length, 0
-                    )}/${
-                        session.tasks.reduce((acc, task) => 
-                            acc + task.subtasks.length, 0
-                    }</p>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Modify existing functions to work with session management
-
-function selectMode(mode) {
-    state.mode = mode;
-    document.getElementById('modeSelection').classList.add('hidden');
-    document.getElementById('setupForm').classList.remove('hidden');
-    if (mode === 'timer') {
-        document.getElementById('timerSetup').classList.remove('hidden');
-    }
-}
-
-function startSession() {
-    if (!UserManager.currentUser) {
-        alertify.error('Please sign in to start a session');
-        return;
     }
 
-    if (state.mode === 'timer') {
-        const hours = parseInt(document.getElementById('hours').value) || 0;
-        const minutes = parseInt(document.getElementById('minutes').value) || 0;
-        state.totalTime = (hours * 60 + minutes) * 60 * 1000;
-        if (state.totalTime <= 0) {
-            alertify.error('Please set a valid time duration');
+    function handleLogin() {
+        const username = document.getElementById('username').value.trim();
+        if (!username) {
+            alertify.error('Please enter a username');
             return;
         }
-    }
-
-    state.breakMode = document.getElementById('breakMode').value;
-    state.taskViewMode = document.getElementById('taskViewMode').value;
-
-    if (state.tasks.length === 0) {
-        alertify.error('Please add at least one task');
-        return;
-    }
-
-    // Initialize session in SessionManager
-    SessionManager.initSession(state.mode, state.tasks, state.breakMode);
-    
-    document.getElementById('setupForm').classList.add('hidden');
-    document.getElementById('sessionView').classList.remove('hidden');
-    renderTaskDisplay();
-    updateProgress();
-
-    // Automatically start the timer when session starts
-    state.startTime = Date.now();
-    state.timer = setInterval(updateTimer, 1000);
-    state.paused = false;
-    document.getElementById('startPauseBtn').textContent = 'Pause';
-    document.getElementById('startPauseBtn').classList.replace('bg-green-500', 'bg-yellow-500');
-}
-
-function toggleTimer() {
-    if (state.paused) {
-        state.startTime = Date.now() - state.elapsedTime;
-        state.timer = setInterval(updateTimer, 1000);
-        document.getElementById('startPauseBtn').textContent = 'Pause';
-        document.getElementById('startPauseBtn').classList.replace('bg-green-500', 'bg-yellow-500');
-    } else {
-        clearInterval(state.timer);
-        state.elapsedTime = Date.now() - state.startTime;
-        document.getElementById('startPauseBtn').textContent = 'Resume';
-        document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
         
-        // Save pause timestamp
-        if (SessionManager.currentSession) {
-            SessionManager.currentSession.timestamps.pauses.push({
-                time: new Date().toISOString(),
-                elapsedTime: state.elapsedTime
-            });
-            SessionManager.saveCurrentSession();
+        const userData = {
+            username,
+            id: Date.now(),
+            joinedDate: new Date().toISOString()
+        };
+        
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        document.getElementById('userDisplay').textContent = `Welcome, ${username}`;
+        document.getElementById('userDisplay').classList.remove('hidden');
+        document.getElementById('signOutBtn').classList.remove('hidden');
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('modeSelection').classList.remove('hidden');
+    }
+
+    function handleEnterKey(event) {
+        if (event.key === 'Enter') {
+            handleLogin();
         }
     }
-    state.paused = !state.paused;
-}
 
-function updateTimer() {
-    state.elapsedTime = Date.now() - state.startTime;
-    const timeDisplay = document.getElementById('timeDisplay');
-    
-    if (state.mode === 'timer') {
-        const remainingTime = state.totalTime - state.elapsedTime;
-        if (remainingTime <= 0) {
-            clearInterval(state.timer);
-            if (!allTasksCompleted()) {
-                alertify.confirm(
-                    'Time\'s Up!',
-                    'You still have incomplete tasks. Would you like to extend the timer?',
-                    function() {
-                        state.totalTime += 30 * 60 * 1000; // Add 30 minutes
-                        state.timer = setInterval(updateTimer, 1000);
-                    },
-                    function() {
-                        completeSession();
-                    }
-                );
-            } else {
-                completeSession();
+    function handleSignOut() {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentSession');
+        window.location.reload();
+    }
+
+// Mode Selection and Setup
+function selectMode(mode) {
+            state.mode = mode;
+            document.getElementById('modeSelection').classList.add('hidden');
+            document.getElementById('setupForm').classList.remove('hidden');
+            if (mode === 'timer') {
+                document.getElementById('timerSetup').classList.remove('hidden');
             }
         }
-        
-        const hours = Math.floor(remainingTime / (60 * 60 * 1000));
-        const minutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
-        const seconds = Math.floor((remainingTime % (60 * 1000)) / 1000);
-        timeDisplay.textContent = `${String(Math.max(0, hours)).padStart(2, '0')}:${String(Math.max(0, minutes)).padStart(2, '0')}:${String(Math.max(0, seconds)).padStart(2, '0')}`;
-        
-        const progress = ((state.totalTime - remainingTime) / state.totalTime) * 100;
-        document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
-    } else {
-        const hours = Math.floor(state.elapsedTime / (60 * 60 * 1000));
-        const minutes = Math.floor((state.elapsedTime % (60 * 60 * 1000)) / (60 * 1000));
-        const seconds = Math.floor((state.elapsedTime % (60 * 1000)) / 1000);
-        timeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
 
-    if (SessionManager.currentSession) {
-        SessionManager.currentSession.elapsedTime = state.elapsedTime;
-        SessionManager.saveCurrentSession();
-    }
-
-    checkForBreak();
-    checkReminders();
-}
-
-function toggleTaskCompletion(taskId, subtaskId = null) {
-    const task = state.tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    if (subtaskId === null) {
-        task.completed = !task.completed;
-        task.subtasks.forEach(st => st.completed = task.completed);
-    } else {
-        const subtask = task.subtasks.find(st => st.id === subtaskId);
-        if (subtask) {
-            subtask.completed = !subtask.completed;
-            task.completed = task.subtasks.every(st => st.completed);
+        function addMainTask() {
+            const taskId = Date.now();
+            state.tasks.push({
+                id: taskId,
+                title: '',
+                subtasks: [],
+                completed: false
+            });
+            renderTaskList();
         }
-    }
 
-    // Update session data
-    if (SessionManager.currentSession) {
-        SessionManager.currentSession.tasks = state.tasks;
-        SessionManager.saveCurrentSession();
-    }
+        function addSubtask(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.subtasks.push({
+                    id: Date.now(),
+                    title: '',
+                    completed: false
+                });
+                renderTaskList();
+            }
+        }
 
-    renderTaskDisplay();
-    updateProgress();
+        function updateTaskTitle(taskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.title = value;
+            }
+        }
 
-    if (allTasksCompleted() && state.mode === 'timer' && 
-        (state.totalTime - state.elapsedTime) > 0) {
-        alertify.success('Congratulations! You completed all tasks ahead of schedule!');
-    }
-}
+        function updateSubtaskTitle(taskId, subtaskId, value) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.title = value;
+                }
+            }
+        }
 
-function completeSession() {
-    clearInterval(state.timer);
-    SessionManager.completeSession();
-    document.getElementById('sessionView').classList.add('hidden');
-    document.getElementById('reportView').classList.remove('hidden');
-    document.getElementById('reportContent').innerHTML = generateReport();
-}
+        function renderTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = state.tasks.map((task, index) => `
+                <div class="p-6 border rounded-xl dark:border-custom-border dark:bg-gray-800 shadow-md">
+                    <input
+                        type="text"
+                        placeholder="Main Task ${index + 1}"
+                        value="${task.title}"
+                        onchange="updateTaskTitle(${task.id}, this.value)"
+                        class="w-full p-2 mb-4 border rounded-lg dark:bg-gray-700 dark:text-white"
+                    >
+                    <div class="ml-4 space-y-2">
+                        ${task.subtasks.map((subtask, subIndex) => `
+                            <input
+                                type="text"
+                                placeholder="Subtask ${subIndex + 1}"
+                                value="${subtask.title}"
+                                onchange="updateSubtaskTitle(${task.id}, ${subtask.id}, this.value)"
+                                class="w-full p-2 mb-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+                            >
+                        `).join('')}
+                    </div>
+                    <button onclick="addSubtask(${task.id})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Add Subtask
+                    </button>
+                </div>
+            `).join('');
+        }
 
-// Initialize everything when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    // Set up event listeners
-    document.getElementById('historyBtn').addEventListener('click', showHistory);
-    document.getElementById('signOutBtn').addEventListener('click', () => UserManager.signOut());
-    
-    // Initialize user session
-    const isLoggedIn = UserManager.init();
-    if (isLoggedIn) {
-        SessionManager.loadSavedSessions();
-        // Check for existing session
-        if (SessionManager.loadCurrentSession()) {
-            state = { ...state, ...SessionManager.currentSession };
-            document.getElementById('modeSelection').classList.add('hidden');
+        function startSession() {
+            if (state.mode === 'timer') {
+                const hours = parseInt(document.getElementById('hours').value) || 0;
+                const minutes = parseInt(document.getElementById('minutes').value) || 0;
+                state.totalTime = (hours * 60 + minutes) * 60 * 1000;
+                if (state.totalTime <= 0) {
+                    alertify.error('Please set a valid time duration');
+                    return;
+                }
+            }
+
+            state.breakMode = document.getElementById('breakMode').value;
+            state.taskViewMode = document.getElementById('taskViewMode').value;
+
+            if (state.tasks.length === 0) {
+                alertify.error('Please add at least one task');
+                return;
+            }
+
+            document.getElementById('setupForm').classList.add('hidden');
             document.getElementById('sessionView').classList.remove('hidden');
             renderTaskDisplay();
             updateProgress();
-            if (!state.paused) {
-                state.startTime = Date.now() - state.elapsedTime;
-                state.timer = setInterval(updateTimer, 1000);
+        }
+
+        function renderTaskDisplay() {
+            const taskDisplay = document.getElementById('taskDisplay');
+            if (state.taskViewMode === 'focus') {
+                const currentTask = state.tasks[state.currentTask];
+                if (!currentTask) return;
+
+                taskDisplay.innerHTML = `
+                    <div class="p-6 border rounded-xl dark:border-custom-border bg-white dark:bg-custom-card shadow-lg">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                    ${currentTask.completed ? 'checked' : ''} 
+                                    onchange="toggleTaskCompletion(${currentTask.id})"
+                                    class="w-5 h-5 mr-3 rounded">
+                                <span class="${currentTask.completed ? 'line-through' : ''} text-lg font-medium dark:text-custom-light">
+                                    ${currentTask.title}
+                                </span>
+                            </div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                Task ${state.currentTask + 1} of ${state.tasks.length}
+                            </span>
+                        </div>
+                        <div class="space-y-3 ml-8">
+                            ${currentTask.subtasks.map(subtask => `
+                                <div class="flex items-center">
+                                    <input type="checkbox" 
+                                        ${subtask.completed ? 'checked' : ''} 
+                                        onchange="toggleTaskCompletion(${currentTask.id}, ${subtask.id})"
+                                        class="w-4 h-4 mr-3 rounded">
+                                    <span class="${subtask.completed ? 'line-through' : ''} dark:text-custom-light">
+                                        ${subtask.title}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-6 flex justify-between">
+                            <button onclick="previousTask()" 
+                                class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:previous-button transition-colors"
+                                ${state.currentTask === 0 ? 'disabled' : ''}>
+                                Previous
+                            </button>
+                            <button onclick="nextTask()" 
+                                class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                                ${state.currentTask === state.tasks.length - 1 ? 'disabled' : ''}>
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                taskDisplay.innerHTML = state.tasks.map(task => `
+                    <div class="p-6 border rounded-xl dark:border-custom-border bg-white dark:bg-custom-card shadow-lg mb-4">
+                        <div class="flex items-center mb-4">
+                            <input type="checkbox" 
+                                ${task.completed ? 'checked' : ''} 
+                                onchange="toggleTaskCompletion(${task.id})"
+                                class="w-5 h-5 mr-3 rounded">
+                            <span class="${task.completed ? 'line-through' : ''} text-lg font-medium dark:text-custom-light">
+                                ${task.title}
+                            </span>
+                        </div>
+                        <div class="space-y-3 ml-8">
+                            ${task.subtasks.map(subtask => `
+                                <div class="flex items-center">
+                                    <input type="checkbox" 
+                                        ${subtask.completed ? 'checked' : ''} 
+                                        onchange="toggleTaskCompletion(${task.id}, ${subtask.id})"
+                                        class="w-4 h-4 mr-3 rounded">
+                                    <span class="${subtask.completed ? 'line-through' : ''} dark:text-custom-light">
+                                        ${subtask.title}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
             }
         }
-    }
-});
 
-</script>
+        function nextTask() {
+            if (state.currentTask < state.tasks.length - 1) {
+                state.currentTask++;
+                renderTaskDisplay();
+            }
+        }
+
+        function previousTask() {
+            if (state.currentTask > 0) {
+                state.currentTask--;
+                renderTaskDisplay();
+            }
+        }
+
+        function toggleTimer() {
+            if (state.paused) {
+                if (!state.startTime) {
+                    state.startTime = Date.now() - state.elapsedTime;
+                }
+                state.timer = setInterval(updateTimer, 1000);
+                document.getElementById('startPauseBtn').textContent = 'Pause';
+                document.getElementById('startPauseBtn').classList.replace('bg-green-500', 'bg-yellow-500');
+            } else {
+                clearInterval(state.timer);
+                document.getElementById('startPauseBtn').textContent = 'Resume';
+                document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+            }
+            state.paused = !state.paused;
+        }
+
+        function updateTimer() {
+            if (!state.paused) {
+                state.elapsedTime = Date.now() - state.startTime;
+                const timeDisplay = document.getElementById('timeDisplay');
+                
+                if (state.mode === 'timer') {
+                    const remainingTime = state.totalTime - state.elapsedTime;
+                    if (remainingTime <= 0) {
+                        clearInterval(state.timer);
+                        if (!allTasksCompleted()) {
+                            alertify.confirm(
+                                'Time\'s Up!',
+                                'You still have incomplete tasks. Would you like to extend the timer?',
+                                function() {
+                                    state.totalTime += 30 * 60 * 1000; // Add 30 minutes
+                                    state.timer = setInterval(updateTimer, 1000);
+                                },
+                                function() {
+                                    completeSession();
+                                }
+                            );
+                        } else {
+                            completeSession();
+                        }
+                    }
+                    
+                    const hours = Math.floor(remainingTime / (60 * 60 * 1000));
+                    const minutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
+                    const seconds = Math.floor((remainingTime % (60 * 1000)) / 1000);
+                    timeDisplay.textContent = `${String(Math.max(0, hours)).padStart(2, '0')}:${String(Math.max(0, minutes)).padStart(2, '0')}:${String(Math.max(0, seconds)).padStart(2, '0')}`;
+                    
+                    const progress = ((state.totalTime - remainingTime) / state.totalTime) * 100;
+                    document.getElementById('timeProgress').style.width = `${Math.min(progress, 100)}%`;
+                } else {
+                    const hours = Math.floor(state.elapsedTime / (60 * 60 * 1000));
+                    const minutes = Math.floor((state.elapsedTime % (60 * 60 * 1000)) / (60 * 1000));
+                    const seconds = Math.floor((state.elapsedTime % (60 * 1000)) / 1000);
+                    timeDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+
+                checkForBreak();
+                checkReminders();
+            }
+        }
+
+        function toggleTaskCompletion(taskId, subtaskId = null) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (subtaskId === null) {
+                task.completed = !task.completed;
+                task.subtasks.forEach(st => st.completed = task.completed);
+            } else {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    task.completed = task.subtasks.every(st => st.completed);
+                }
+            }
+
+            const now = Date.now();
+            if (!state.taskTimes[taskId]) {
+                state.taskTimes[taskId] = { start: state.startTime };
+            }
+            if (task.completed) {
+                state.taskTimes[taskId].end = now;
+            }
+
+            renderTaskDisplay();
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = state.tasks.reduce((acc, task) => {
+                return acc + (task.completed ? task.subtasks.length + 1 : 
+                    task.subtasks.filter(st => st.completed).length);
+            }, 0);
+
+            const progress = (completedTasks / totalTasks) * 100;
+            document.getElementById('taskProgress').style.width = `${progress}%`;
+        }
+
+        function allTasksCompleted() {
+            return state.tasks.every(task => task.completed);
+        }
+
+        function checkForBreak() {
+            if (state.breakMode === 'none' || state.paused) return;
+
+            const workTime = state.breakMode === 'pomodoro' ? 25 * 60 * 1000 : 60 * 60 * 1000;
+            const breakTime = state.breakMode === 'pomodoro' ? 5 * 60 * 1000 : 15 * 60 * 1000;
+
+            if (!state.nextBreak) {
+                state.nextBreak = state.startTime + workTime;
+            }
+
+            if (Date.now() >= state.nextBreak) {
+                state.nextBreak = Date.now() + workTime + breakTime;
+                alertify.alert('Break Time!', 
+                    `Time for a ${state.breakMode === 'pomodoro' ? '5' : '15'} minute break!`);
+                toggleTimer();
+            }
+        }
+
+        function checkReminders() {
+            const now = Date.now();
+
+            if (now >= state.nextReminder) {
+                alertify.notify('Time to stand up, move around, and drink some water!', 'success', 5);
+                state.nextReminder = now + 30 * 60 * 1000;
+            }
+
+            if (now >= state.nextMealReminder) {
+                alertify.notify('Remember to eat something!', 'success', 5);
+                state.nextMealReminder = now + 2 * 60 * 60 * 1000;
+            }
+        }
+
+        function resetSession() {
+            if (confirm('Are you sure you want to reset the session? All progress will be lost.')) {
+                clearInterval(state.timer);
+                state.elapsedTime = 0;
+                state.startTime = null;
+                state.paused = true;
+                state.currentTask = 0;
+                state.tasks.forEach(task => {
+                    task.completed = false;
+                    task.subtasks.forEach(st => st.completed = false);
+                });
+                document.getElementById('timeDisplay').textContent = '00:00:00';
+                document.getElementById('timeProgress').style.width = '0%';
+                document.getElementById('taskProgress').style.width = '0%';
+                document.getElementById('startPauseBtn'.textContent = 'Start';
+                document.getElementById('startPauseBtn').classList.replace('bg-yellow-500', 'bg-green-500');
+                renderTaskDisplay();
+            }
+        }
+
+        function completeSession() {
+            clearInterval(state.timer);
+            document.getElementById('sessionView').classList.add('hidden');
+            document.getElementById('reportView').classList.remove('hidden');
+            document.getElementById('reportContent').innerHTML = generateReport();
+            saveSessionToHistory();
+        }
+
+        function generateReport() {
+            const totalTime = state.elapsedTime;
+            const completedTasks = state.tasks.filter(t => t.completed);
+            const completionRate = (completedTasks.length / state.tasks.length) * 100;
+
+            let report = `
+                <div class="space-y-4 dark:text-custom-light">
+                    <h3 class="text-2xl font-bold mb-6">Session Summary</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl">
+                        <p class="mb-3">Total Time: ${formatTime(totalTime)}</p>
+                        <p class="mb-3">Completion Rate: ${completionRate.toFixed(1)}%</p>
+                        <h4 class="text-xl font-bold mt-6 mb-4">Task Details:</h4>
+                        ${state.tasks.map(task => {
+                            const taskTime = state.taskTimes[task.id];
+                            const duration = taskTime && taskTime.end ? 
+                                taskTime.end - taskTime.start : 
+                                'Incomplete';
+                            
+                            return `
+                                <div class="ml-4 mb-4">
+                                    <p class="font-medium mb-2">${task.title} - ${
+                                        typeof duration === 'number' ? 
+                                        formatTime(duration) : duration
+                                    }</p>
+                                    ${task.subtasks.map(st => `
+                                        <p class="ml-4 text-gray-600 dark:text-gray-400">
+                                            • ${st.title} - ${st.completed ? '✓' : '✗'}
+                                        </p>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            return report;
+        }
+
+        function formatTime(ms) {
+            const hours = Math.floor(ms / (60 * 60 * 1000));
+            const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+            const seconds = Math.floor((ms % (60 * 1000)) / 1000);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function saveSessionToHistory() {
+            const sessionData = {
+                date: new Date().toISOString(),
+                totalTime: state.elapsedTime,
+                mode: state.mode,
+                tasks: state.tasks,
+                taskTimes: state.taskTimes
+            };
+
+            let history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
+            history.push(sessionData);
+            localStorage.setItem('sessionHistory', JSON.stringify(history));
+        }
+
+        function downloadReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const content = document.getElementById('reportContent').innerText;
+            
+            doc.setFont('helvetica');
+            doc.setFontSize(12);
+            
+            const splitText = doc.splitTextToSize(content, 180);
+            doc.text(splitText, 15, 15);
+            
+            doc.save('study-session-report.pdf');
+        }
+
+        function startNewSession() {
+            state = {
+                mode: null,
+                darkMode: state.darkMode,
+                tasks: [],
+                currentTask: 0,
+                timer: null,
+                startTime: null,
+                totalTime: 0,
+                elapsedTime: 0,
+                paused: true,
+                taskTimes: {},
+                breakMode: null,
+                nextBreak: null,
+                nextReminder: Date.now() + 30 * 60 * 1000,
+                nextMealReminder: Date.now() + 2 * 60 * 1000
+            };
+            
+            document.getElementById('reportView').classList.add('hidden');
+            document.getElementById('modeSelection').classList.remove('hidden');
+        }
+    </script>
 </body>
 </html>
