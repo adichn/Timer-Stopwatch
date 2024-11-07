@@ -212,10 +212,6 @@
                 <!-- Report content will be inserted here -->
             </div>
             <div class="mt-8 flex space-x-4">
-                <button onclick="downloadReport()" 
-                    class="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                    Download PDF
-                </button>
                 <button onclick="startNewSession()" 
                     class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
                     Start New Session
@@ -583,24 +579,6 @@
             document.getElementById('modeSelection').classList.remove('hidden');
         }
 
-        function downloadReport() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            // Select the report content to be added to the PDF
-            const reportContent = document.getElementById('reportContent');
-
-            // Use the `html` method from jsPDF to capture and render HTML content
-            doc.html(reportContent, {
-                callback: function (doc) {
-                    // Save the document once rendering is complete
-                    doc.save("Session_Report.pdf");
-                },
-                x: 10,
-                y: 10,
-                width: 180  // Scale the content to fit within the PDF's width
-            });
-        }
 
         function toggleTimer() {
             if (state.paused) {
