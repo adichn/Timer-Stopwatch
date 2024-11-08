@@ -1600,7 +1600,10 @@
                 date: new Date().toISOString()
             };
 
-            // Prompt for journal entry
+            // Show report first
+            showSessionReport(sessionData);
+
+            // Then prompt for journal entry
             alertify.prompt('Session Journal',
                 'Write a brief reflection or gratitude note (max 200 words):',
                 '',
@@ -1608,15 +1611,40 @@
                     if (value.trim()) {
                         const journalEntry = {
                             date: sessionData.date,
-                            content: value.slice(0, 200),
+                            content: value.trim().slice(0, 200),
                             sessionData: sessionData
                         };
                         state.journalEntries.push(journalEntry);
                         UserStorage.set('journalEntries', state.journalEntries);
                     }
                     
-                    saveSessionData(sessionData);
-                    showSessionReport(sessionData);
+                    // Save session data
+                    const history = UserStorage.get('sessionHistory') || [];
+                    history.push(sessionData);
+                    UserStorage.set('sessionHistory', history);
+
+                    // Clear current session state
+                    state = {
+                        ...state,
+                        mode: null,
+                        tasks: [],
+                        currentTask: 0,
+                        timer: null,
+                        startTime: null,
+                        totalTime: 0,
+                        elapsedTime: 0,
+                        paused: true,
+                        taskTimes: {},
+                        breakMode: null,
+                        nextBreak: null,
+                        focusMode: false,
+                        currentTaskIndex: 0
+                    };
+
+                    // Return to home screen
+                    goToHomepage();
+                    
+                    alertify.success('Session completed successfully!');
                 }
             );
         }
@@ -1867,6 +1895,67 @@
             };
             
             goToHomepage();
+        }
+
+        function showSessionReport(sessionData) {
+            hideAllViews();
+            const reportView = document.getElementById('reportView');
+            reportView.classList.remove('hidden');
+            
+            const reportContent = document.getElementById('reportContent');
+            reportContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="stat-card">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Duration</h4>
+                            <p class="stat-value">${formatTime(sessionData.duration)}</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Tasks Completed</h4>
+                            <p class="stat-value">${sessionData.completionRate}%</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Mode</h4>
+                            <p class="stat-value">${sessionData.mode === 'timer' ? 'Timer' : 'Stopwatch'}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Task Summary</h3>
+                        ${sessionData.tasks.map(task => `
+                            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <div class="flex items-center mb-2">
+                                    <span class="text-lg ${task.completed ? 'line-through' : ''} dark:text-white">
+                                        ${task.title}
+                                    </span>
+                                    <span class="ml-auto text-sm ${task.completed ? 'text-green-500' : 'text-red-500'}">
+                                        ${task.completed ? 'Completed' : 'Incomplete'}
+                                    </span>
+                                </div>
+                                ${task.subtasks.length ? `
+                                    <div class="ml-4 space-y-1">
+                                        ${task.subtasks.map(subtask => `
+                                            <div class="flex items-center">
+                                                <span class="text-sm ${subtask.completed ? 'line-through' : ''} dark:text-gray-300">
+                                                    ${subtask.title}
+                                                </span>
+                                                <span class="ml-auto text-xs ${subtask.completed ? 'text-green-500' : 'text-red-500'}">
+                                                    ${subtask.completed ? 'Done' : 'Not Done'}
+                                                </span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function goToHomepage() {
+            hideAllViews();
+            document.getElementById('modeSelection').classList.remove('hidden');
         }
 
         function goToHomepage() {
