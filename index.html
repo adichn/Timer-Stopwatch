@@ -391,7 +391,7 @@
             </div>
 
             <!-- Summary Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div class="stat-card">
                     <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Study Time</h4>
                     <p id="totalStudyTime" class="stat-value text-blue-600 dark:text-blue-400">0h</p>
@@ -404,45 +404,80 @@
                     <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Completion Rate</h4>
                     <p id="avgCompletionRate" class="stat-value text-purple-600 dark:text-purple-400">0%</p>
                 </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Productivity Score</h4>
+                    <p id="productivityScore" class="stat-value text-indigo-600 dark:text-indigo-400">0</p>
+                </div>
             </div>
 
-            <!-- Charts -->
+            <!-- Primary Charts -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Daily Study Pattern</h3>
-                    <canvas id="dailyPatternChart"></canvas>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white">Daily Study Pattern</h3>
+                        <select id="timePatternSelect" 
+                            class="px-2 py-1 border rounded dark:bg-gray-700 dark:text-white"
+                            onchange="updateTimePatternChart(this.value)">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <canvas id="timePatternChart"></canvas>
                 </div>
                 <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Focus Distribution</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white">Focus Distribution</h3>
+                        <select id="focusMetricSelect" 
+                            class="px-2 py-1 border rounded dark:bg-gray-700 dark:text-white"
+                            onchange="updateFocusChart(this.value)">
+                            <option value="completion">Completion Rate</option>
+                            <option value="duration">Session Duration</option>
+                            <option value="breaks">Break Patterns</option>
+                        </select>
+                    </div>
                     <canvas id="focusDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Secondary Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Time of Day Effectiveness</h3>
+                    <canvas id="timeEffectivenessChart"></canvas>
+                </div>
+                <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Session Length Impact</h3>
+                    <canvas id="sessionLengthChart"></canvas>
                 </div>
             </div>
 
             <!-- Rankings and Insights -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Rankings -->
                 <div class="space-y-6">
-                    <!-- Most Completed Tasks -->
+                    <!-- Task Rankings -->
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Most Completed Tasks</h3>
-                        <div id="mostCompletedTasks" class="space-y-2">
-                            <!-- Will be populated by JavaScript -->
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Task Rankings</h3>
+                        <div class="flex mb-4">
+                            <button onclick="toggleTaskRankingView('completion')"
+                                class="flex-1 px-3 py-1 bg-blue-500 text-white rounded-l">
+                                By Completion
+                            </button>
+                            <button onclick="toggleTaskRankingView('frequency')"
+                                class="flex-1 px-3 py-1 bg-gray-500 text-white rounded-r">
+                                By Frequency
+                            </button>
                         </div>
-                    </div>
-
-                    <!-- Least Completed Tasks -->
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Improvement Areas</h3>
-                        <div id="leastCompletedTasks" class="space-y-2">
+                        <div id="taskRankings" class="space-y-2">
                             <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Insights -->
+                <!-- Insights Panel -->
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Personal Insights</h3>
-                    <div id="analyticsInsights" class="space-y-4">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Pattern Insights</h3>
+                    <div id="patternInsights" class="space-y-4">
                         <!-- Will be populated by JavaScript -->
                     </div>
                 </div>
@@ -1303,6 +1338,479 @@
                     : "Your completion rate has room for improvement. Try breaking tasks into smaller subtasks."
             };
         }
-            </script>
+
+        // Enhanced Analytics System
+const AnalyticsEngine = {
+    patterns: {},
+    charts: {},
+
+    analyzeSessionData(history) {
+        if (!history.length) return null;
+
+        return {
+            timePatterns: this.analyzeTimePatterns(history),
+            taskPatterns: this.analyzeTaskPatterns(history),
+            focusPatterns: this.analyzeFocusPatterns(history),
+            productivity: this.calculateProductivityScore(history),
+            insights: this.generateInsights(history)
+        };
+    },
+
+    analyzeTimePatterns(history) {
+        const hourlyDistribution = Array(24).fill(0);
+        const weekdayDistribution = Array(7).fill(0);
+        const sessionLengths = [];
+        const completionByTime = Array(24).fill({ total: 0, completed: 0 });
+
+        history.forEach(session => {
+            const date = new Date(session.date);
+            const hour = date.getHours();
+            const day = date.getDay();
+
+            // Update distributions
+            hourlyDistribution[hour]++;
+            weekdayDistribution[day]++;
+            sessionLengths.push(session.duration);
+
+            // Track completion rates by time
+            completionByTime[hour].total++;
+            completionByTime[hour].completed += session.completionRate;
+        });
+
+        // Calculate optimal times
+        const bestHours = this.findOptimalTimes(completionByTime);
+        const avgSessionLength = sessionLengths.reduce((a, b) => a + b, 0) / sessionLengths.length;
+
+        return {
+            hourlyDistribution,
+            weekdayDistribution,
+            bestHours,
+            avgSessionLength,
+            sessionLengths
+        };
+    },
+
+    analyzeTaskPatterns(history) {
+        const taskStats = {};
+        const taskSequences = [];
+        let totalTasks = 0;
+
+        history.forEach(session => {
+            session.tasks.forEach((task, index) => {
+                if (!taskStats[task.title]) {
+                    taskStats[task.title] = {
+                        attempts: 0,
+                        completions: 0,
+                        avgDuration: 0,
+                        sequence: []
+                    };
+                }
+
+                const stats = taskStats[task.title];
+                stats.attempts++;
+                if (task.completed) stats.completions++;
+                stats.sequence.push(index);
+                totalTasks++;
+            });
+        });
+
+        // Calculate success rates and patterns
+        Object.values(taskStats).forEach(stats => {
+            stats.successRate = (stats.completions / stats.attempts) * 100;
+            stats.averagePosition = stats.sequence.reduce((a, b) => a + b, 0) / stats.sequence.length;
+        });
+
+        return {
+            taskStats,
+            totalTasks,
+            commonSequences: this.findCommonSequences(taskSequences)
+        };
+    },
+
+    analyzeFocusPatterns(history) {
+        const focusScores = [];
+        const breakPatterns = [];
+        let totalFocusTime = 0;
+
+        history.forEach(session => {
+            const sessionScore = this.calculateSessionFocusScore(session);
+            focusScores.push(sessionScore);
+            totalFocusTime += session.duration - this.calculateTotalBreakTime(session);
+            
+            if (session.breaks && session.breaks.length) {
+                breakPatterns.push({
+                    sessionDuration: session.duration,
+                    breakCount: session.breaks.length,
+                    avgBreakLength: this.calculateAverageBreakLength(session.breaks)
+                });
+            }
+        });
+
+        return {
+            averageFocusScore: focusScores.reduce((a, b) => a + b, 0) / focusScores.length,
+            focusTrend: this.calculateTrend(focusScores),
+            optimalBreakPattern: this.findOptimalBreakPattern(breakPatterns),
+            totalFocusTime
+        };
+    },
+
+    calculateProductivityScore(history) {
+        if (!history.length) return 0;
+
+        const recentSessions = history.slice(-5); // Look at last 5 sessions
+        const weights = {
+            completionRate: 0.4,
+            focusScore: 0.3,
+            consistency: 0.3
+        };
+
+        const scores = {
+            completionRate: this.calculateAverageCompletionRate(recentSessions),
+            focusScore: this.calculateAverageFocusScore(recentSessions),
+            consistency: this.calculateConsistencyScore(history)
+        };
+
+        return Object.entries(weights).reduce((score, [metric, weight]) => {
+            return score + (scores[metric] * weight);
+        }, 0);
+    },
+
+    findOptimalTimes(completionByTime) {
+        return completionByTime
+            .map((data, hour) => ({
+                hour,
+                effectiveness: data.total > 0 ? data.completed / data.total : 0
+            }))
+            .sort((a, b) => b.effectiveness - a.effectiveness)
+            .slice(0, 3);
+    },
+
+    findCommonSequences(sequences) {
+        // Implement sequence pattern matching
+        const patterns = {};
+        sequences.forEach(seq => {
+            if (seq.length < 2) return;
+            for (let i = 0; i < seq.length - 1; i++) {
+                const pair = `${seq[i]}-${seq[i + 1]}`;
+                patterns[pair] = (patterns[pair] || 0) + 1;
+            }
+        });
+
+        return Object.entries(patterns)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5);
+    },
+
+    calculateTrend(values) {
+        if (values.length < 2) return 0;
+        
+        const xMean = (values.length - 1) / 2;
+        const yMean = values.reduce((a, b) => a + b, 0) / values.length;
+        
+        let numerator = 0;
+        let denominator = 0;
+        
+        values.forEach((value, index) => {
+            numerator += (index - xMean) * (value - yMean);
+            denominator += Math.pow(index - xMean, 2);
+        });
+        
+        return denominator !== 0 ? numerator / denominator : 0;
+    },
+
+    calculateSessionFocusScore(session) {
+        const baseScore = session.completionRate;
+        const breakPenalty = session.breaks ? 
+            Math.min(10, session.breaks.length * 2) : 0;
+        
+        return Math.max(0, Math.min(100, baseScore - breakPenalty));
+    },
+
+    calculateConsistencyScore(history) {
+        if (history.length < 2) return 100;
+
+        const intervals = [];
+        for (let i = 1; i < history.length; i++) {
+            const interval = new Date(history[i].date) - new Date(history[i-1].date);
+            intervals.push(interval);
+        }
+
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        const variance = intervals.reduce((acc, interval) => {
+            return acc + Math.pow(interval - avgInterval, 2);
+        }, 0) / intervals.length;
+
+        // Convert variance to a 0-100 score (lower variance = higher score)
+        return Math.max(0, 100 - Math.sqrt(variance) / (24 * 60 * 60 * 1000) * 100);
+    },
+
+    // Chart Management
+    initializeCharts() {
+        this.createTimePatternChart();
+        this.createFocusDistributionChart();
+        this.createTimeEffectivenessChart();
+        this.createSessionLengthChart();
+    },
+
+    createTimePatternChart() {
+        const ctx = document.getElementById('timePatternChart').getContext('2d');
+        this.charts.timePattern = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Study Activity',
+                    data: [],
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Sessions: ${context.raw}`
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    },
+
+    createFocusDistributionChart() {
+        const ctx = document.getElementById('focusDistributionChart').getContext('2d');
+        this.charts.focusDistribution = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['High Focus', 'Medium Focus', 'Low Focus'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)', // Green
+                        'rgba(251, 191, 36, 0.8)', // Yellow
+                        'rgba(239, 68, 68, 0.8)'   // Red
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: document.body.classList.contains('dark') ? '#fff' : '#000'
+                        }
+                    }
+                }
+            }
+        });
+    },
+
+    createTimeEffectivenessChart() {
+        const ctx = document.getElementById('timeEffectivenessChart').getContext('2d');
+        this.charts.timeEffectiveness = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Morning', 'Afternoon', 'Evening', 'Night'],
+                datasets: [{
+                    label: 'Completion Rate',
+                    data: [0, 0, 0, 0],
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+    },
+
+    createSessionLengthChart() {
+        const ctx = document.getElementById('sessionLengthChart').getContext('2d');
+        this.charts.sessionLength = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Session Performance',
+                    data: [],
+                    backgroundColor: 'rgba(99, 102, 241, 0.5)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Session Duration (hours)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Completion Rate (%)'
+                        },
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+    },
+
+    updateCharts(data) {
+        this.updateTimePatternChart(data.timePatterns);
+        this.updateFocusDistributionChart(data.focusPatterns);
+        this.updateTimeEffectivenessChart(data.timePatterns);
+        this.updateSessionLengthChart(data);
+    },
+
+    generateInsights(history) {
+        const patterns = this.analyzeSessionData(history);
+        const insights = [];
+
+        // Time-based insights
+        const bestTimes = this.findOptimalTimes(patterns.timePatterns.hourlyDistribution);
+        insights.push({
+            icon: '⏰',
+            title: 'Peak Performance Times',
+            message: `You're most productive at ${bestTimes.map(t => `${t.hour}:00`).join(', ')}.`
+        });
+
+        // Break pattern insights
+        const breakPatterns = patterns.focusPatterns.optimalBreakPattern;
+        if (breakPatterns) {
+            insights.push({
+                icon: '☕',
+                title: 'Break Optimization',
+                message: `Your focus is highest with ${breakPatterns.breakCount} breaks over ${
+                    Math.round(breakPatterns.sessionDuration / (60 * 1000))} minutes.`
+            });
+        }
+
+        // Task sequence insights
+        const taskPatterns = patterns.taskPatterns;
+        if (taskPatterns.commonSequences.length > 0) {
+            const bestSequence = taskPatterns.commonSequences[0];
+            insights.push({
+                icon: '📋',
+                title: 'Task Sequencing',
+                message: `You're more effective when starting with ${bestSequence[0]} 
+                         followed by ${bestSequence[1]}.`
+            });
+        }
+
+        // Trend analysis
+        const focusTrend = patterns.focusPatterns.focusTrend;
+        insights.push({
+            icon: '📈',
+            title: 'Progress Trend',
+            message: focusTrend > 0 
+                ? 'Your focus scores are improving! Keep up the momentum.'
+                : 'Consider shorter sessions to maintain higher focus levels.'
+        });
+
+        // Session length optimization
+        const optimalLength = this.findOptimalSessionLength(history);
+        insights.push({
+            icon: '⚖️',
+            title: 'Session Length',
+            message: `Your most productive sessions are ${
+                Math.round(optimalLength / (60 * 1000))} minutes long.`
+        });
+
+        return insights;
+    },
+
+    findOptimalSessionLength(history) {
+        if (!history.length) return 0;
+
+        // Group sessions by duration ranges and calculate average completion rates
+        const durationGroups = {};
+        const INTERVAL = 30 * 60 * 1000; // 30-minute intervals
+
+        history.forEach(session => {
+            const group = Math.floor(session.duration / INTERVAL) * INTERVAL;
+            if (!durationGroups[group]) {
+                durationGroups[group] = {
+                    total: 0,
+                    completionSum: 0
+                };
+            }
+            durationGroups[group].total++;
+            durationGroups[group].completionSum += session.completionRate;
+        });
+
+        // Find the duration with highest average completion rate
+        let optimalDuration = 0;
+        let bestRate = 0;
+
+        Object.entries(durationGroups).forEach(([duration, stats]) => {
+            const avgRate = stats.completionSum / stats.total;
+            if (avgRate > bestRate && stats.total >= 3) { // Require at least 3 sessions
+                bestRate = avgRate;
+                optimalDuration = parseInt(duration);
+            }
+        });
+
+        return optimalDuration;
+    },
+
+    renderInsights(insights) {
+        const container = document.getElementById('patternInsights');
+        container.innerHTML = insights.map(insight => `
+            <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                <div class="flex items-center mb-2">
+                    <span class="text-2xl mr-3">${insight.icon}</span>
+                    <h4 class="font-semibold text-gray-800 dark:text-white">${insight.title}</h4>
+                </div>
+                <p class="text-gray-600 dark:text-gray-300">${insight.message}</p>
+            </div>
+        `).join('');
+    }
+};
+
+// Add this to your existing update analytics function:
+function updateAnalytics(history) {
+    if (!history.length) return;
+
+    const analysis = AnalyticsEngine.analyzeSessionData(history);
+    
+    // Update summary stats
+    document.getElementById('totalStudyTime').textContent = formatTime(
+        history.reduce((acc, session) => acc + session.duration, 0)
+    );
+    document.getElementById('totalSessions').textContent = history.length;
+    document.getElementById('avgCompletionRate').textContent = 
+        `${Math.round(analysis.patterns.taskPatterns.completionRate)}%`;
+    document.getElementById('productivityScore').textContent = 
+        Math.round(analysis.productivity);
+
+    // Initialize and update charts
+    AnalyticsEngine.initializeCharts();
+    AnalyticsEngine.updateCharts(analysis);
+
+    // Generate and display insights
+    const insights = AnalyticsEngine.generateInsights(history);
+    AnalyticsEngine.renderInsights(insights);
+}
+
+        </script>
 </body>
 </html>
