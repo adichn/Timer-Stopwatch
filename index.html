@@ -861,6 +861,7 @@
 
             // Set current user
             state.currentUser = username;
+            localStorage.setItem('currentUser', username);
             
             // Initialize user data if first time
             if (!UserStorage.get('initialized')) {
@@ -873,14 +874,12 @@
                 });
             }
 
-            // Load user-specific data into state
+            // Load user-specific data
             state.journalEntries = UserStorage.get('journalEntries') || [];
             state.calendarTasks = UserStorage.get('calendarTasks') || {};
             state.darkMode = (UserStorage.get('settings') || {}).darkMode || false;
 
-            // Store current user
-            localStorage.setItem('currentUser', username);
-            
+            // Update UI for logged-in state
             showLoggedInState(username);
         }
 
@@ -930,6 +929,20 @@
             if (window.Chart) {
                 updateAnalyticsCharts(UserStorage.get('sessionHistory') || []);
             }
+        }
+
+        function showLoggedInState(username) {
+            // Update UI elements
+            document.getElementById('userInfo').textContent = username;
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('journalBtn').classList.remove('hidden');
+            document.getElementById('calendarBtn').classList.remove('hidden');
+            document.getElementById('analyticsBtn').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            
+            // Hide login form and show mode selection
+            hideAllViews();
+            document.getElementById('modeSelection').classList.remove('hidden');
         }
 
         // Mode selection and session management
