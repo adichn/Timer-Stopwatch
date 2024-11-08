@@ -978,6 +978,196 @@
             updateProgress();
         }
 
+        // View Toggle Functions
+        function toggleJournalView() {
+            hideAllViews();
+            const journalView = document.getElementById('journalView');
+            journalView.classList.remove('hidden');
+            
+            // Render journal entries
+            const journalEntries = document.getElementById('journalEntries');
+            journalEntries.innerHTML = state.journalEntries
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map(entry => `
+                    <div class="journal-entry">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                ${new Date(entry.date).toLocaleString()}
+                            </span>
+                        </div>
+                        <p class="text-gray-800 dark:text-gray-200">${entry.content}</p>
+                        <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                            <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
+                            <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
+                        </div>
+                    </div>
+                `)
+                .join('') || '<p class="text-gray-500 dark:text-gray-400">No journal entries yet.</p>';
+        }
+
+        function toggleCalendarView() {
+            hideAllViews();
+            const calendarView = document.getElementById('calendarView');
+            calendarView.classList.remove('hidden');
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            const today = new Date();
+            const dates = [];
+            
+            // Get previous, current, and next day
+            for (let i = -1; i <= 1; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                dates.push(date);
+            }
+            
+            calendarGrid.innerHTML = dates.map(date => {
+                const dateStr = date.toISOString().split('T')[0];
+                const tasks = state.calendarTasks[dateStr] || [];
+                const isToday = date.toDateString() === today.toDateString();
+                
+                return `
+                    <div class="calendar-day ${isToday ? 'current-day' : ''}">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold dark:text-white">
+                                ${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </h3>
+                            <button onclick="addCalendarTask('${dateStr}')"
+                                class="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                                + Task
+                            </button>
+                        </div>
+                        <div class="space-y-2">
+                            ${tasks.map((task, index) => `
+                                <div class="task-item p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                                onchange="toggleCalendarTask('${dateStr}', ${index})"
+                                                class="mr-2">
+                                            <span class="${task.completed ? 'line-through' : ''} dark:text-white">
+                                                ${task.title}
+                                            </span>
+                                        </div>
+                                        <button onclick="deleteCalendarTask('${dateStr}', ${index})"
+                                            class="text-red-500 hover:text-red-600">×</button>
+                                    </div>
+                                    ${task.subtasks ? task.subtasks.map((subtask, subIndex) => `
+                                        <div class="ml-6 mt-1 flex items-center">
+                                            <input type="checkbox" ${subtask.completed ? 'checked' : ''}
+                                                onchange="toggleCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
+                                                class="mr-2">
+                                            <span class="${subtask.completed ? 'line-through' : ''} text-sm dark:text-gray-300">
+                                                ${subtask.text}
+                                            </span>
+                                        </div>
+                                    `).join('') : ''}
+                                    <button onclick="addCalendarSubtask('${dateStr}', ${index})"
+                                        class="ml-6 mt-1 text-sm text-blue-500 hover:text-blue-600">
+                                        + Subtask
+                                    </button>
+                                </div>
+                            `).join('') || '<p class="text-gray-500 dark:text-gray-400">No tasks for this day</p>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleAnalyticsView() {
+            hideAllViews();
+            const analyticsView = document.getElementById('analyticsView');
+            analyticsView.classList.remove('hidden');
+            
+            // Get session history and update analytics
+            const history = UserStorage.get('sessionHistory') || [];
+            updateAnalytics(history);
+        }
+
+        function updateTaskRankings(history) {
+            // Get all tasks across sessions
+            const taskStats = {};
+            history.forEach(session => {
+                session.tasks.forEach(task => {
+                    if (!taskStats[task.title]) {
+                        taskStats[task.title] = {
+                            completed: 0,
+                            total: 0
+                        };
+                    }
+                    taskStats[task.title].total++;
+                    if (task.completed) {
+                        taskStats[task.title].completed++;
+                    }
+                });
+            });
+
+            // Calculate completion rates
+            const taskRankings = Object.entries(taskStats)
+                .map(([title, stats]) => ({
+                    title,
+                    completionRate: (stats.completed / stats.total) * 100
+                }))
+                .sort((a, b) => b.completionRate - a.completionRate);
+
+            // Update most completed tasks
+            const mostCompletedTasks = document.getElementById('mostCompletedTasks');
+            mostCompletedTasks.innerHTML = taskRankings
+                .slice(0, 5)
+                .map(task => `
+                    <div class="flex justify-between items-center text-gray-800 dark:text-gray-200">
+                        <span>${task.title}</span>
+                        <span>${Math.round(task.completionRate)}% completed</span>
+                    </div>
+                `)
+                .join('') || '<p class="text-gray-500">No task data available</p>';
+
+            // Update improvement areas
+            const leastCompletedTasks = document.getElementById('leastCompletedTasks');
+            leastCompletedTasks.innerHTML = taskRankings
+                .slice(-5)
+                .reverse()
+                .map(task => `
+                    <div class="flex justify-between items-center text-gray-800 dark:text-gray-200">
+                        <span>${task.title}</span>
+                        <span>${Math.round(task.completionRate)}% completed</span>
+                    </div>
+                `)
+                .join('') || '<p class="text-gray-500">No task data available</p>';
+        }
+
+        function updateInsights(history) {
+            const insights = document.getElementById('analyticsInsights');
+            if (!history.length) {
+                insights.innerHTML = '<p class="text-gray-500">Complete more sessions to see insights</p>';
+                return;
+            }
+
+            // Calculate insights
+            const avgSessionLength = history.reduce((acc, session) => acc + session.duration, 0) / history.length;
+            const bestCompletionRate = Math.max(...history.map(session => session.completionRate));
+            const recentTrend = history.slice(-3).map(session => session.completionRate);
+            const improving = recentTrend.every((rate, i) => i === 0 || rate >= recentTrend[i - 1]);
+
+            insights.innerHTML = `
+                <div class="space-y-4">
+                    <p class="text-gray-800 dark:text-gray-200">
+                        Average session length: ${formatTime(avgSessionLength)}
+                    </p>
+                    <p class="text-gray-800 dark:text-gray-200">
+                        Best completion rate: ${Math.round(bestCompletionRate)}%
+                    </p>
+                    ${improving ? 
+                        '<p class="text-green-600 dark:text-green-400">Your completion rate is improving! Keep up the good work!</p>' :
+                        '<p class="text-blue-600 dark:text-blue-400">Try breaking tasks into smaller subtasks to improve completion rates.</p>'
+                    }
+                </div>
+            `;
+        }
+
         // Task Focus Mode
         function toggleFocusMode(enabled) {
             state.focusMode = enabled;
