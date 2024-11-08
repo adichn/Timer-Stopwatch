@@ -976,49 +976,84 @@
                 const tasks = state.calendarTasks[dateStr] || [];
 
                 return `
-                    <div class="calendar-day ${isToday ? 'current-day' : ''}">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-gray-800 dark:text-white">
-                                ${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                            </h3>
-                            <button onclick="addCalendarTask('${dateStr}')"
-                                class="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                                Add Task
-                            </button>
-                        </div>
-                        <div class="space-y-2 task-list">
-                            ${tasks.map((task, index) => `
-                                <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                    <div class="flex items-center justify-between">
-                                        <input type="checkbox" 
-                                            ${task.completed ? 'checked' : ''} 
-                                            onchange="toggleCalendarTask('${dateStr}', ${index})"
-                                            class="w-4 h-4 mr-2">
-                                        <span class="flex-grow ${task.completed ? 'line-through' : ''} dark:text-white">
-                                            ${task.title}
-                                        </span>
-                                        <div class="flex items-center">
-                                            <button onclick="addCalendarSubtask('${dateStr}', ${index})"
-                                                class="text-blue-500 hover:text-blue-600 mr-2">+</button>
-                                            <button onclick="deleteCalendarTask('${dateStr}', ${index})"
-                                                class="text-red-500 hover:text-red-600">×</button>
-                                        </div>
-                                    </div>
-                                    ${task.subtasks ? task.subtasks.map((subtask, subIndex) => `
-                                        <div class="ml-6 flex items-center mt-1">
-                                            <input type="checkbox" 
-                                                ${subtask.completed ? 'checked' : ''} 
-                                                onchange="toggleCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
-                                                class="w-3 h-3 mr-2">
-                                            <span class="${subtask.completed ? 'line-through' : ''} text-sm dark:text-gray-300">
-                                                ${subtask.text}
-                                            </span>
-                                            <button onclick="deleteCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
-                                                class="text-red-500 hover:text-red-600 ml-2">×</button>
-                                        </div>
-                                    `).join('') : ''}
+                    <div class="calendar-day ${isToday ? 'current-day' : ''} transform hover:scale-[1.02] transition-transform">
+                        <div class="flex flex-col">
+                            <div class="flex justify-between items-center mb-4 pb-2 border-b dark:border-gray-700">
+                                <div class="flex flex-col">
+                                    <h3 class="font-bold text-lg text-gray-800 dark:text-white">
+                                        ${date.toLocaleDateString('en-US', { weekday: 'short' })}
+                                    </h3>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                                        ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
                                 </div>
-                            `).join('')}
+                                <button onclick="addCalendarTask('${dateStr}')"
+                                    class="px-3 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 
+                                        transform hover:scale-105 transition-all text-sm flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    Add
+                                </button>
+                            </div>
+                            <div class="space-y-2 task-list overflow-y-auto" style="max-height: 300px;">
+                                ${tasks.length === 0 ? `
+                                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
+                                        <p class="text-sm">No tasks yet</p>
+                                    </div>
+                                ` : ''}
+                                ${tasks.map((task, index) => `
+                                    <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-shadow">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1">
+                                                <input type="checkbox" 
+                                                    ${task.completed ? 'checked' : ''} 
+                                                    onchange="toggleCalendarTask('${dateStr}', ${index})"
+                                                    class="w-4 h-4 mr-2 cursor-pointer">
+                                                <span class="flex-grow ${task.completed ? 'line-through' : ''} dark:text-white">
+                                                    ${task.title}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center space-x-1">
+                                                <button onclick="addCalendarSubtask('${dateStr}', ${index})"
+                                                    class="p-1 text-blue-500 hover:text-blue-600 rounded">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                            d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                </button>
+                                                <button onclick="deleteCalendarTask('${dateStr}', ${index})"
+                                                    class="p-1 text-red-500 hover:text-red-600 rounded">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        ${task.subtasks ? task.subtasks.map((subtask, subIndex) => `
+                                            <div class="ml-6 flex items-center justify-between mt-2">
+                                                <div class="flex items-center flex-1">
+                                                    <input type="checkbox" 
+                                                        ${subtask.completed ? 'checked' : ''} 
+                                                        onchange="toggleCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
+                                                        class="w-3 h-3 mr-2 cursor-pointer">
+                                                    <span class="${subtask.completed ? 'line-through' : ''} text-sm dark:text-gray-300">
+                                                        ${subtask.text}
+                                                    </span>
+                                                </div>
+                                                <button onclick="deleteCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
+                                                    class="p-1 text-red-500 hover:text-red-600 rounded">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                            d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        `).join('') : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1037,7 +1072,7 @@
                     }
                     
                     state.calendarTasks[dateStr].push({
-                        title: value,
+                        title: value.trim(),
                         completed: false,
                         subtasks: []
                     });
@@ -1045,7 +1080,7 @@
                     localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
                     renderCalendar();
                 }
-            );
+            ).set('closable', false); // This ensures the dialog doesn't close until user clicks a button
         }
 
         function addCalendarSubtask(dateStr, taskIndex) {
@@ -1130,22 +1165,61 @@
 
         function renderJournalEntries() {
             const entriesContainer = document.getElementById('journalEntries');
+            if (state.journalEntries.length === 0) {
+                entriesContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
+                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                            </path>
+                        </svg>
+                        <p class="text-xl mb-2">No journal entries yet</p>
+                        <p>Complete a study session to add your first reflection</p>
+                    </div>`;
+                return;
+            }
+
             entriesContainer.innerHTML = state.journalEntries
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(entry => `
-                    <div class="journal-entry">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-gray-600 dark:text-gray-400">
-                                ${new Date(entry.date).toLocaleDateString()}
-                            </span>
-                            <span class="text-sm text-gray-500">
-                                Session duration: ${formatTime(entry.sessionData.duration)}
+                    <div class="journal-entry hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <div class="flex items-center">
+                                <div class="text-lg font-semibold text-gray-800 dark:text-white">
+                                    ${new Date(entry.date).toLocaleDateString('en-US', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    })}
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-sm">
+                                ${formatTime(entry.sessionData.duration)}
                             </span>
                         </div>
-                        <p class="text-gray-800 dark:text-gray-200">${entry.content}</p>
-                        <div class="mt-2 text-sm text-gray-500">
-                            <div>Completion rate: ${entry.sessionData.completionRate}%</div>
-                            <div>Mode: ${entry.sessionData.mode}</div>
+                        <div class="prose dark:prose-invert max-w-none">
+                            <p class="text-gray-800 dark:text-gray-200 text-lg mb-4">${entry.content}</p>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-4 pt-3 border-t">
+                            <div class="text-center">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Mode</div>
+                                <div class="font-semibold text-gray-800 dark:text-gray-200">
+                                    ${entry.sessionData.mode.charAt(0).toUpperCase() + entry.sessionData.mode.slice(1)}
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Completion Rate</div>
+                                <div class="font-semibold text-gray-800 dark:text-gray-200">
+                                    ${entry.sessionData.completionRate}%
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Tasks Completed</div>
+                                <div class="font-semibold text-gray-800 dark:text-gray-200">
+                                    ${entry.sessionData.tasks.filter(t => t.completed).length}/${entry.sessionData.tasks.length}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -1283,6 +1357,371 @@
             updateAnalyticsCharts(history);
             updateTaskRankings(history);
             updateInsights(history);
+        }
+
+        function updateAnalyticsCharts(history) {
+            // Daily Pattern Chart
+            const ctx1 = document.getElementById('dailyPatternChart').getContext('2d');
+            const dailyData = getDailyPatternData(history);
+            
+            if (window.dailyPatternChart) {
+                window.dailyPatternChart.destroy();
+            }
+            
+            window.dailyPatternChart = new Chart(ctx1, {
+                type: 'bar',
+                data: dailyData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                            },
+                            grid: {
+                                color: document.body.classList.contains('dark') ? '#2d3748' : '#e2e8f0'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                            },
+                            grid: {
+                                color: document.body.classList.contains('dark') ? '#2d3748' : '#e2e8f0'
+                            }
+                        }
+                    }
+                }
+            });
+
+
+
+            // Focus Distribution Chart
+            const ctx2 = document.getElementById('focusDistributionChart').getContext('2d');
+            const focusData = getFocusDistributionData(history);
+            
+            function getFocusDistributionData(history) {
+                const completionRates = history.map(session => session.completionRate);
+                const high = completionRates.filter(rate => rate >= 80).length;
+                const medium = completionRates.filter(rate => rate >= 50 && rate < 80).length;
+                const low = completionRates.filter(rate => rate < 50).length;
+
+                return {
+                    labels: ['High Focus (>80%)', 'Medium Focus (50-80%)', 'Low Focus (<50%)'],
+                    datasets: [{
+                        data: [high, medium, low],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(251, 191, 36, 1)',
+                            'rgba(239, 68, 68, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+}
+
+function updateTaskRankings(history) {
+    // Gather all unique tasks and their completion stats
+    const taskStats = {};
+    
+    history.forEach(session => {
+        session.tasks.forEach(task => {
+            if (!taskStats[task.title]) {
+                taskStats[task.title] = {
+                    total: 0,
+                    completed: 0,
+                    title: task.title
+                };
+            }
+            taskStats[task.title].total++;
+            if (task.completed) {
+                taskStats[task.title].completed++;
+            }
+        });
+    });
+
+    // Convert to array and calculate completion rates
+    const tasksArray = Object.values(taskStats)
+        .filter(task => task.total >= 2) // Only include tasks that appear more than once
+        .map(task => ({
+            ...task,
+            completionRate: (task.completed / task.total) * 100
+        }));
+
+    // Sort for most and least completed
+    const mostCompleted = [...tasksArray]
+        .sort((a, b) => b.completionRate - a.completionRate)
+        .slice(0, 5);
+    
+    const leastCompleted = [...tasksArray]
+        .sort((a, b) => a.completionRate - b.completionRate)
+        .slice(0, 5);
+
+    // Render rankings
+    document.getElementById('mostCompletedTasks').innerHTML = mostCompleted.length > 0 ? 
+        mostCompleted.map((task, index) => `
+            <div class="flex items-center justify-between p-2 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''} rounded">
+                <div class="flex items-center">
+                    <span class="w-6 h-6 flex items-center justify-center bg-blue-100 dark:bg-blue-900 
+                                text-blue-800 dark:text-blue-200 rounded-full text-sm mr-3">
+                        ${index + 1}
+                    </span>
+                    <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-green-600 dark:text-green-400 font-semibold">
+                        ${Math.round(task.completionRate)}%
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">
+                        (${task.completed}/${task.total})
+                    </span>
+                </div>
+            </div>
+        `).join('') :
+        '<div class="text-gray-500 dark:text-gray-400 text-center py-4">Complete more sessions to see rankings</div>';
+
+    document.getElementById('leastCompletedTasks').innerHTML = leastCompleted.length > 0 ?
+        leastCompleted.map((task, index) => `
+            <div class="flex items-center justify-between p-2 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''} rounded">
+                <div class="flex items-center">
+                    <span class="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900 
+                                text-red-800 dark:text-red-200 rounded-full text-sm mr-3">
+                        ${index + 1}
+                    </span>
+                    <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-red-600 dark:text-red-400 font-semibold">
+                        ${Math.round(task.completionRate)}%
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">
+                        (${task.completed}/${task.total})
+                    </span>
+                </div>
+            </div>
+        `).join('') :
+        '<div class="text-gray-500 dark:text-gray-400 text-center py-4">Complete more sessions to see rankings</div>';
+}
+
+function updateInsights(history) {
+    const insights = generateInsights(history);
+    document.getElementById('analyticsInsights').innerHTML = insights
+        .map(insight => `
+            <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:shadow-md transition-shadow">
+                <div class="flex items-center mb-3">
+                    <span class="text-2xl mr-3">${insight.icon}</span>
+                    <h4 class="font-semibold text-gray-800 dark:text-white">${insight.title}</h4>
+                </div>
+                <p class="text-gray-600 dark:text-gray-300">${insight.message}</p>
+                ${insight.recommendation ? `
+                    <p class="text-blue-600 dark:text-blue-400 mt-2 text-sm">
+                        💡 Recommendation: ${insight.recommendation}
+                    </p>
+                ` : ''}
+            </div>
+        `).join('');
+}
+
+function generateInsights(history) {
+    if (history.length === 0) {
+        return [{
+            icon: '📊',
+            title: 'No Data Yet',
+            message: 'Complete your first study session to see personalized insights!'
+        }];
+    }
+
+    const insights = [];
+
+    // Most Productive Time
+    const hourlyPerformance = analyzeHourlyPerformance(history);
+    if (hourlyPerformance.bestHour !== undefined) {
+        insights.push({
+            icon: '⏰',
+            title: 'Peak Performance Time',
+            message: `You're most productive at ${hourlyPerformance.bestHour}:00.`,
+            recommendation: 'Schedule important tasks during this time window.'
+        });
+    }
+
+    // Session Length Analysis
+    const sessionLengths = history.map(s => s.duration);
+    const avgLength = sessionLengths.reduce((a, b) => a + b, 0) / sessionLengths.length;
+    if (avgLength > 0) {
+        const optimalLength = avgLength > 2 * 60 * 60 * 1000 ? 'shorter' : 'longer';
+        insights.push({
+            icon: '⚖️',
+            title: 'Session Duration',
+            message: `Your average session is ${formatTime(avgLength)}.`,
+            recommendation: `Consider ${optimalLength} sessions for better focus and retention.`
+        });
+    }
+
+    // Completion Rate Trend
+    const completionRates = history.map(s => s.completionRate);
+    const recentTrend = analyzeTrend(completionRates.slice(-5));
+    insights.push({
+        icon: '📈',
+        title: 'Recent Progress',
+        message: recentTrend.message,
+        recommendation: recentTrend.recommendation
+    });
+
+    // Break Pattern Analysis
+    const breakPattern = analyzeBreakPatterns(history);
+    insights.push({
+        icon: '☕',
+        title: 'Break Patterns',
+        message: breakPattern.message,
+        recommendation: breakPattern.recommendation
+    });
+
+    return insights;
+}
+
+function analyzeHourlyPerformance(history) {
+    const hourlyStats = Array(24).fill().map(() => ({
+        sessions: 0,
+        completionRate: 0
+    }));
+
+    history.forEach(session => {
+        const hour = new Date(session.date).getHours();
+        hourlyStats[hour].sessions++;
+        hourlyStats[hour].completionRate += session.completionRate;
+    });
+
+    let bestHour = undefined;
+    let bestRate = 0;
+
+    hourlyStats.forEach((stats, hour) => {
+        if (stats.sessions > 0) {
+            const avgRate = stats.completionRate / stats.sessions;
+            if (avgRate > bestRate) {
+                bestRate = avgRate;
+                bestHour = hour;
+            }
+        }
+    });
+
+    return { bestHour };
+}
+
+function analyzeTrend(rates) {
+    if (rates.length < 2) {
+        return {
+            message: "Complete more sessions to see your progress trend.",
+            recommendation: "Aim for consistent daily practice."
+        };
+    }
+
+    const trend = rates[rates.length - 1] - rates[0];
+    
+    if (trend > 5) {
+        return {
+            message: "Your completion rate is improving! Keep up the momentum.",
+            recommendation: "Try to maintain this positive trend by setting realistic goals."
+        };
+    } else if (trend < -5) {
+        return {
+            message: "Your completion rate has decreased recently.",
+            recommendation: "Consider breaking down tasks into smaller, more manageable chunks."
+        };
+    } else {
+        return {
+            message: "Your performance has been steady.",
+            recommendation: "Challenge yourself with slightly more difficult goals."
+        };
+    }
+}
+
+function analyzeBreakPatterns(history) {
+    const hasBreaks = history.some(session => session.breakMode !== 'none');
+    
+    if (!hasBreaks) {
+        return {
+            message: "You haven't been taking structured breaks during your sessions.",
+            recommendation: "Try the Pomodoro technique (25min work/5min break) to maintain focus."
+        };
+    }
+
+    const preferredBreak = history.reduce((acc, session) => {
+        if (!acc[session.breakMode]) acc[session.breakMode] = 0;
+        acc[session.breakMode]++;
+        return acc;
+    }, {});
+
+    const mostUsedBreak = Object.entries(preferredBreak)
+        .sort((a, b) => b[1] - a[1])[0][0];
+
+    return {
+        message: `You prefer ${mostUsedBreak === 'pomodoro' ? 'shorter, frequent' : 'longer'} breaks.`,
+        recommendation: mostUsedBreak === 'pomodoro' ? 
+            "This is great for maintaining consistent focus!" :
+            "Consider trying shorter, more frequent breaks to prevent fatigue."
+    };
+}
+
+
+
+
+            if (window.focusDistributionChart) {
+                window.focusDistributionChart.destroy();
+            }
+            
+            window.focusDistributionChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: focusData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update rankings and insights
+            updateTaskRankings(history);
+            updateInsights(history);
+        }
+
+        function getDailyPatternData(history) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dailyTotals = Array(7).fill(0);
+            
+            history.forEach(session => {
+                const day = new Date(session.date).getDay();
+                dailyTotals[day] += session.duration / (1000 * 60 * 60); // Convert to hours
+            });
+
+            return {
+                labels: days,
+                datasets: [{
+                    label: 'Study Hours',
+                    data: dailyTotals,
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            };
         }
 
         // Utility functions
