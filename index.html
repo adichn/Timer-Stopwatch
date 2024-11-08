@@ -984,6 +984,9 @@
             const journalView = document.getElementById('journalView');
             journalView.classList.remove('hidden');
             
+            // Get fresh journal entries from storage
+            state.journalEntries = UserStorage.get('journalEntries') || [];
+            
             // Render journal entries
             const journalEntries = document.getElementById('journalEntries');
             journalEntries.innerHTML = state.journalEntries
@@ -1003,6 +1006,11 @@
                     </div>
                 `)
                 .join('') || '<p class="text-gray-500 dark:text-gray-400">No journal entries yet.</p>';
+        }
+        function updateAnalyticsCharts(history) {
+            if (window.Chart) {
+                initializeCharts(history);
+            }
         }
 
         function toggleCalendarView() {
@@ -1608,20 +1616,23 @@
                 'Write a brief reflection or gratitude note (max 200 words):',
                 '',
                 function(evt, value) {
+                    // Save session data first
+                    const history = UserStorage.get('sessionHistory') || [];
+                    history.push(sessionData);
+                    UserStorage.set('sessionHistory', history);
+                    
                     if (value.trim()) {
                         const journalEntry = {
                             date: sessionData.date,
                             content: value.trim().slice(0, 200),
                             sessionData: sessionData
                         };
+                        
+                        // Update journal entries in state and storage
+                        state.journalEntries = UserStorage.get('journalEntries') || [];
                         state.journalEntries.push(journalEntry);
                         UserStorage.set('journalEntries', state.journalEntries);
                     }
-                    
-                    // Save session data
-                    const history = UserStorage.get('sessionHistory') || [];
-                    history.push(sessionData);
-                    UserStorage.set('sessionHistory', history);
 
                     // Clear current session state
                     state = {
@@ -1643,7 +1654,6 @@
 
                     // Return to home screen
                     goToHomepage();
-                    
                     alertify.success('Session completed successfully!');
                 }
             );
@@ -1667,8 +1677,16 @@
 
         // Analytics functions
         function updateAnalytics(history) {
+            // Get fresh data from storage
+            history = UserStorage.get('sessionHistory') || [];
+            
             if (!history || history.length === 0) {
-                alertify.error('No session history available');
+                document.getElementById('totalStudyTime').textContent = formatTime(0);
+                document.getElementById('totalSessions').textContent = '0';
+                document.getElementById('avgCompletionRate').textContent = '0%';
+                document.getElementById('mostCompletedTasks').innerHTML = '<p class="text-gray-500">No task data available</p>';
+                document.getElementById('leastCompletedTasks').innerHTML = '<p class="text-gray-500">No task data available</p>';
+                document.getElementById('analyticsInsights').innerHTML = '<p class="text-gray-500">Complete more sessions to see insights</p>';
                 return;
             }
 
