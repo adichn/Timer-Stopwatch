@@ -175,6 +175,10 @@
                     <span id="userInfo" class="hidden px-3 py-1 bg-green-500 text-white rounded-full text-sm"></span>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <button id="homeBtn" onclick="goToHomepage()" 
+                        class="nav-item text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400">
+                        Home
+                    </button>
                     <button id="analyticsBtn" onclick="toggleAnalyticsView()" 
                         class="nav-item hidden text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400">
                         Analytics
@@ -353,6 +357,20 @@
                        transition-all duration-200 flex items-center justify-center">
                 Complete Session
             </button>
+        </div>
+    </div>
+
+    <!-- Report View -->
+    <div id="reportView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6 slide-in">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Session Report</h2>
+            <div id="reportContent"></div>
+            <div class="mt-8 flex space-x-4">
+                <button onclick="startNewSession()" 
+                    class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    Start New Session
+                </button>
+            </div>
         </div>
     </div>
     <!-- Analytics View -->
@@ -886,10 +904,21 @@
         }
 
         function hideAllViews() {
-            ['loginForm', 'modeSelection', 'setupForm', 'sessionView', 'reportView', 'analyticsView']
-                .forEach(viewId => {
-                    document.getElementById(viewId)?.classList.add('hidden');
-                });
+            const views = [
+                'loginForm', 
+                'modeSelection', 
+                'setupForm', 
+                'sessionView', 
+                'reportView', 
+                'analyticsView'
+            ];
+            
+            views.forEach(viewId => {
+                const element = document.getElementById(viewId);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
         }
 
         function getDailyPatternData(history) {
@@ -1038,6 +1067,52 @@
                 doc.save('study-analytics.pdf');
                 alertify.success('Analytics exported successfully');
             }
+        }
+
+        function goToHomepage() {
+            hideAllViews();
+            document.getElementById('modeSelection').classList.remove('hidden');
+        }
+
+        function startNewSession() {
+            // Reset state
+            state = {
+                ...state,
+                mode: null,
+                tasks: [],
+                currentTask: 0,
+                timer: null,
+                startTime: null,
+                totalTime: 0,
+                elapsedTime: 0,
+                paused: true,
+                taskTimes: {},
+                breakMode: null,
+                nextBreak: null
+            };
+            
+            // Go to mode selection
+            goToHomepage();
+        }
+
+        // Update the completeSession function:
+        function completeSession() {
+            clearInterval(state.timer);
+            const sessionData = {
+                duration: state.elapsedTime,
+                mode: state.mode,
+                tasks: state.tasks.map(task => ({
+                    ...task,
+                    subtasks: task.subtasks
+                })),
+                completionRate: calculateCompletionRate()
+            };
+            
+            saveSessionData(sessionData);
+            
+            hideAllViews();
+            document.getElementById('reportView').classList.remove('hidden');
+            document.getElementById('reportContent').innerHTML = generateReport(sessionData);
         }
     </script>
 </body>
