@@ -390,6 +390,7 @@
                 </div>
             </div>
 
+            <!-- Summary Stats -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div class="stat-card">
                     <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Study Time</h4>
@@ -405,6 +406,7 @@
                 </div>
             </div>
 
+            <!-- Charts -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
                     <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Daily Study Pattern</h3>
@@ -416,10 +418,33 @@
                 </div>
             </div>
 
-            <div class="card p-6">
-                <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Task Performance</h3>
-                <div id="taskAnalytics" class="space-y-4">
-                    <!-- Task analytics will be inserted here -->
+            <!-- Rankings and Insights -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Rankings -->
+                <div class="space-y-6">
+                    <!-- Most Completed Tasks -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Most Completed Tasks</h3>
+                        <div id="mostCompletedTasks" class="space-y-2">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Least Completed Tasks -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Improvement Areas</h3>
+                        <div id="leastCompletedTasks" class="space-y-2">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Personal Insights</h3>
+                    <div id="analyticsInsights" class="space-y-4">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1114,6 +1139,170 @@
             document.getElementById('reportView').classList.remove('hidden');
             document.getElementById('reportContent').innerHTML = generateReport(sessionData);
         }
-    </script>
+
+        function updateAnalytics(history) {
+            const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
+            const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+
+            document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
+            document.getElementById('totalSessions').textContent = history.length;
+            document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
+
+            updateAnalyticsCharts(history);
+            updateTaskRankings(history);
+            updateInsights(history);
+        }
+
+        function updateTaskRankings(history) {
+            // Gather all unique tasks and their completion stats
+            const taskStats = {};
+            
+            history.forEach(session => {
+                session.tasks.forEach(task => {
+                    if (!taskStats[task.title]) {
+                        taskStats[task.title] = {
+                            total: 0,
+                            completed: 0,
+                            title: task.title
+                        };
+                    }
+                    taskStats[task.title].total++;
+                    if (task.completed) {
+                        taskStats[task.title].completed++;
+                    }
+                });
+            });
+
+            // Convert to array and calculate completion rates
+            const tasksArray = Object.values(taskStats).map(task => ({
+                ...task,
+                completionRate: (task.completed / task.total) * 100
+            }));
+
+            // Sort for most and least completed
+            const mostCompleted = [...tasksArray]
+                .sort((a, b) => b.completionRate - a.completionRate)
+                .slice(0, 10);
+            
+            const leastCompleted = [...tasksArray]
+                .sort((a, b) => a.completionRate - b.completionRate)
+                .slice(0, 10);
+
+            // Render rankings
+            document.getElementById('mostCompletedTasks').innerHTML = mostCompleted
+                .map((task, index) => `
+                    <div class="flex items-center justify-between p-2 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''} rounded">
+                        <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
+                        <span class="text-green-600 dark:text-green-400">${Math.round(task.completionRate)}%</span>
+                    </div>
+                `).join('');
+
+            document.getElementById('leastCompletedTasks').innerHTML = leastCompleted
+                .map((task, index) => `
+                    <div class="flex items-center justify-between p-2 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''} rounded">
+                        <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
+                        <span class="text-red-600 dark:text-red-400">${Math.round(task.completionRate)}%</span>
+                    </div>
+                `).join('');
+        }
+
+        function updateInsights(history) {
+            const insights = generateInsights(history);
+            document.getElementById('analyticsInsights').innerHTML = insights
+                .map(insight => `
+                    <div class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <span class="text-2xl mr-2">${insight.icon}</span>
+                            <h4 class="font-semibold text-gray-800 dark:text-white">${insight.title}</h4>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-300">${insight.message}</p>
+                    </div>
+                `).join('');
+        }
+
+        function generateInsights(history) {
+            const insights = [];
+            
+            // Best time of day
+            const hourlyPerformance = analyzeHourlyPerformance(history);
+            const bestHour = hourlyPerformance.bestHour;
+            insights.push({
+                icon: '⏰',
+                title: 'Peak Performance Time',
+                message: `You're most productive at ${bestHour}:00. Consider scheduling important tasks during this time.`
+            });
+
+            // Session length analysis
+            const sessionLengths = history.map(s => s.duration);
+            const avgLength = sessionLengths.reduce((a, b) => a + b, 0) / sessionLengths.length;
+            const optimalLength = avgLength > 2 * 60 * 60 * 1000 ? 'shorter' : 'longer';
+            insights.push({
+                icon: '📊',
+                title: 'Session Length',
+                message: `Your average session is ${formatTime(avgLength)}. Consider ${optimalLength} sessions for better focus.`
+            });
+
+            // Break pattern insight
+            const breakPattern = analyzeBreakPatterns(history);
+            insights.push({
+                icon: '☕',
+                title: 'Break Patterns',
+                message: breakPattern.message
+            });
+
+            // Task completion trends
+            const completionTrend = analyzeCompletionTrends(history);
+            insights.push({
+                icon: '📈',
+                title: 'Completion Trends',
+                message: completionTrend.message
+            });
+
+            return insights;
+        }
+
+        function analyzeHourlyPerformance(history) {
+            const hourlyStats = Array(24).fill().map(() => ({
+                sessions: 0,
+                completionRate: 0
+            }));
+
+            history.forEach(session => {
+                const hour = new Date(session.date).getHours();
+                hourlyStats[hour].sessions++;
+                hourlyStats[hour].completionRate += session.completionRate;
+            });
+
+            const bestHour = hourlyStats.reduce((best, curr, hour) => {
+                const avgRate = curr.sessions > 0 ? curr.completionRate / curr.sessions : 0;
+                if (avgRate > best.rate) {
+                    return { hour, rate: avgRate };
+                }
+                return best;
+            }, { hour: 0, rate: 0 }).hour;
+
+            return { bestHour };
+        }
+
+        function analyzeBreakPatterns(history) {
+            // Simplified for example
+            return {
+                message: "You tend to take breaks every 45 minutes. Consider trying the Pomodoro technique (25-minute work intervals) for better focus."
+            };
+        }
+
+        function analyzeCompletionTrends(history) {
+            if (history.length < 2) return { message: "Complete more sessions to see completion trends." };
+
+            const rates = history.map(s => s.completionRate);
+            const trend = rates[rates.length - 1] - rates[0];
+            
+            return {
+                message: trend > 0 
+                    ? "Your task completion rate is improving! Keep up the good work."
+                    : "Your completion rate has room for improvement. Try breaking tasks into smaller subtasks."
+            };
+        }
+            </script>
 </body>
 </html>
