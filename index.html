@@ -178,6 +178,7 @@
             padding: 1rem;
             box-shadow: var(--card-shadow);
             min-height: 200px;
+            transition: all 0.3s ease;
         }
 
         .dark .calendar-day {
@@ -189,7 +190,7 @@
             border: 2px solid #4F46E5;
         }
 
-        /* Task Focus Mode Styles */
+        /* Task Focus Mode */
         .task-focus-controls {
             display: flex;
             justify-content: space-between;
@@ -211,11 +212,43 @@
             padding: 1rem;
             margin-bottom: 1rem;
             box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
         }
 
         .dark .journal-entry {
             background: #1e1e1e;
             border: 1px solid #333;
+        }
+
+        /* User-specific styles */
+        .user-indicator {
+            background: var(--primary-gradient);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
         }
     </style>
 </head>
@@ -226,7 +259,7 @@
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Study Timer Pro</h1>
-                    <span id="userInfo" class="hidden px-3 py-1 bg-green-500 text-white rounded-full text-sm"></span>
+                    <span id="userInfo" class="hidden user-indicator"></span>
                 </div>
                 <div class="flex items-center space-x-4">
                     <button id="homeBtn" onclick="goToHomepage()" 
@@ -269,7 +302,7 @@
                         id="username" 
                         placeholder="Enter username"
                         class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                               dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     >
                 </div>
                 <button 
@@ -287,7 +320,7 @@
             <div class="card p-6 cursor-pointer group" onclick="selectMode('timer')">
                 <div class="flex items-center justify-between mb-4">
                     <svg class="w-10 h-10 text-blue-500 group-hover:text-blue-600 transition-colors" 
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -299,7 +332,7 @@
             <div class="card p-6 cursor-pointer group" onclick="selectMode('stopwatch')">
                 <div class="flex items-center justify-between mb-4">
                     <svg class="w-10 h-10 text-green-500 group-hover:text-green-600 transition-colors" 
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                             d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
                     </svg>
@@ -319,12 +352,12 @@
                     <div class="relative">
                         <input type="number" id="hours" placeholder="Hours" min="0"
                             class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
                     <div class="relative">
                         <input type="number" id="minutes" placeholder="Minutes" min="0" max="59"
                             class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                   dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     </div>
                 </div>
             </div>
@@ -332,7 +365,8 @@
             <div class="mb-8">
                 <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Break Settings</h3>
                 <select id="breakMode" 
-                    class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
+                        dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     <option value="pomodoro">Pomodoro (25min work / 5min break)</option>
                     <option value="long">Long Sessions (50min work / 10min break)</option>
                     <option value="none">No Breaks</option>
@@ -536,11 +570,230 @@
         </div>
     </div>
 
+    <!-- Session View -->
+    <div id="sessionView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6 slide-in">
+            <div class="text-center mb-8">
+                <h2 id="timeDisplay" class="text-6xl font-bold mb-4 text-gray-800 dark:text-white font-mono tracking-wider">00:00:00</h2>
+                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 p-0.5">
+                    <div id="timeProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Focus Score</h4>
+                    <p id="focusScore" class="stat-value">100%</p>
+                </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Break</h4>
+                    <p id="nextBreakTime" class="stat-value">--:--</p>
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4 mb-8">
+                <button id="startPauseBtn" onclick="toggleTimer()" 
+                    class="px-8 py-4 rounded-lg text-white bg-green-500 hover:bg-green-600 transition-all duration-200 flex items-center">
+                    Start
+                </button>
+                <button onclick="resetSession()" 
+                    class="px-8 py-4 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-all duration-200 flex items-center">
+                    Reset
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Task Progress</h3>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        <span id="completedTaskCount">0</span> / <span id="totalTaskCount">0</span> completed
+                    </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700 p-0.5">
+                    <div id="taskProgress" class="progress-gradient h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="task-focus-controls">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" onchange="toggleFocusMode(this.checked)"
+                        class="form-checkbox h-5 w-5 text-blue-600">
+                    <span class="ml-2 text-gray-700 dark:text-gray-200">Focus Mode</span>
+                </label>
+                <div id="currentTaskIndicator" class="text-gray-700 dark:text-gray-200 hidden">
+                    Current Task: <span id="currentTaskNumber">1</span>/<span id="totalTaskNumber">1</span>
+                </div>
+            </div>
+
+            <div id="taskDisplay" class="space-y-4 task-list mb-6">
+                <!-- Tasks will be displayed here -->
+            </div>
+
+            <button onclick="completeSession()" 
+                class="w-full px-6 py-4 rounded-lg text-white bg-purple-500 hover:bg-purple-600 
+                       transition-all duration-200 flex items-center justify-center">
+                Complete Session
+            </button>
+        </div>
+    </div>
+
+    <!-- Report View -->
+    <div id="reportView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6 slide-in">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Session Report</h2>
+            <div id="reportContent"></div>
+            <div class="mt-8 flex space-x-4">
+                <button onclick="startNewSession()" 
+                    class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    Start New Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal View -->
+    <div id="journalView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6 slide-in">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Study Journal</h2>
+            <div id="journalEntries" class="space-y-4">
+                <!-- Journal entries will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div id="calendarView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6 slide-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Study Calendar</h2>
+                <span id="taskCount" class="text-sm text-gray-600 dark:text-gray-400"></span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid">
+                <!-- Calendar days will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics View -->
+    <div id="analyticsView" class="hidden container mx-auto mt-20 p-6">
+        <div class="card p-6 slide-in">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Study Analytics</h2>
+                <div class="flex space-x-4">
+                    <button onclick="exportAnalytics('pdf')" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                        Export PDF
+                    </button>
+                    <button onclick="resetStatistics()" 
+                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                        Reset Stats
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Study Time</h4>
+                    <p id="totalStudyTime" class="stat-value text-blue-600 dark:text-blue-400">0h</p>
+                </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Sessions Completed</h4>
+                    <p id="totalSessions" class="stat-value text-green-600 dark:text-green-400">0</p>
+                </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Completion Rate</h4>
+                    <p id="avgCompletionRate" class="stat-value text-purple-600 dark:text-purple-400">0%</p>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Daily Study Pattern</h3>
+                    <canvas id="dailyPatternChart"></canvas>
+                </div>
+                <div class="chart-container bg-white dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Focus Distribution</h3>
+                    <canvas id="focusDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Rankings and Insights -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-6">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Most Completed Tasks</h3>
+                        <div id="mostCompletedTasks" class="space-y-2">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Improvement Areas</h3>
+                        <div id="leastCompletedTasks" class="space-y-2">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Personal Insights</h3>
+                    <div id="analyticsInsights" class="space-y-4">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // User Storage Management
+        const UserStorage = {
+            get: function(key) {
+                const username = state.currentUser;
+                if (!username) return null;
+                try {
+                    return JSON.parse(localStorage.getItem(`${username}_${key}`));
+                } catch (e) {
+                    console.error('Error retrieving data:', e);
+                    return null;
+                }
+            },
+
+            set: function(key, value) {
+                const username = state.currentUser;
+                if (!username) return;
+                try {
+                    localStorage.setItem(`${username}_${key}`, JSON.stringify(value));
+                } catch (e) {
+                    console.error('Error storing data:', e);
+                    alertify.error('Error saving data');
+                }
+            },
+
+            clearUser: function(username) {
+                Object.keys(localStorage)
+                    .filter(key => key.startsWith(`${username}_`))
+                    .forEach(key => localStorage.removeItem(key));
+            },
+
+            getAllUsers: function() {
+                const users = new Set();
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const username = key.split('_')[0];
+                    if (username) users.add(username);
+                }
+                return Array.from(users);
+            }
+        };
+
         // Global state
         let state = {
+            currentUser: null,
             mode: null,
-            darkMode: localStorage.getItem('darkMode') === 'true',
+            darkMode: false,
             tasks: [],
             currentTask: 0,
             timer: null,
@@ -553,8 +806,8 @@
             nextBreak: null,
             focusMode: false,
             currentTaskIndex: 0,
-            journalEntries: JSON.parse(localStorage.getItem('journalEntries') || '[]'),
-            calendarTasks: JSON.parse(localStorage.getItem('calendarTasks') || '{}')
+            journalEntries: [],
+            calendarTasks: {}
         };
 
         // Initialize on page load
@@ -565,15 +818,21 @@
         });
 
         function initializeApp() {
-            // Apply theme
-            if (state.darkMode) {
-                document.body.classList.add('dark');
-            }
+            // Check for current user
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                state.currentUser = currentUser;
+                
+                // Load user-specific data
+                state.journalEntries = UserStorage.get('journalEntries') || [];
+                state.calendarTasks = UserStorage.get('calendarTasks') || {};
+                state.darkMode = (UserStorage.get('settings') || {}).darkMode || false;
 
-            // Check login status
-            const user = localStorage.getItem('user');
-            if (user) {
-                showLoggedInState(user);
+                if (state.darkMode) {
+                    document.body.classList.add('dark');
+                }
+
+                showLoggedInState(currentUser);
             }
         }
 
@@ -600,19 +859,29 @@
                 return;
             }
 
-            localStorage.setItem('user', username);
-            showLoggedInState(username);
-        }
+            // Set current user
+            state.currentUser = username;
+            
+            // Initialize user data if first time
+            if (!UserStorage.get('initialized')) {
+                UserStorage.set('initialized', true);
+                UserStorage.set('sessionHistory', []);
+                UserStorage.set('journalEntries', []);
+                UserStorage.set('calendarTasks', {});
+                UserStorage.set('settings', {
+                    darkMode: false
+                });
+            }
 
-        function showLoggedInState(username) {
-            document.getElementById('userInfo').textContent = `Welcome, ${username}`;
-            document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            document.getElementById('analyticsBtn').classList.remove('hidden');
-            document.getElementById('journalBtn').classList.remove('hidden');
-            document.getElementById('calendarBtn').classList.remove('hidden');
-            document.getElementById('modeSelection').classList.remove('hidden');
+            // Load user-specific data into state
+            state.journalEntries = UserStorage.get('journalEntries') || [];
+            state.calendarTasks = UserStorage.get('calendarTasks') || {};
+            state.darkMode = (UserStorage.get('settings') || {}).darkMode || false;
+
+            // Store current user
+            localStorage.setItem('currentUser', username);
+            
+            showLoggedInState(username);
         }
 
         function logout() {
@@ -622,7 +891,32 @@
                 }
                 clearInterval(state.timer);
             }
-            localStorage.removeItem('user');
+
+            // Clear current user
+            localStorage.removeItem('currentUser');
+            state.currentUser = null;
+            
+            // Reset state
+            state = {
+                ...state,
+                mode: null,
+                tasks: [],
+                currentTask: 0,
+                timer: null,
+                startTime: null,
+                totalTime: 0,
+                elapsedTime: 0,
+                paused: true,
+                taskTimes: {},
+                breakMode: null,
+                nextBreak: null,
+                focusMode: false,
+                currentTaskIndex: 0,
+                journalEntries: [],
+                calendarTasks: {},
+                currentUser: null
+            };
+
             location.reload();
         }
 
@@ -630,9 +924,11 @@
         function toggleTheme() {
             state.darkMode = !state.darkMode;
             document.body.classList.toggle('dark');
-            localStorage.setItem('darkMode', state.darkMode);
+            if (state.currentUser) {
+                UserStorage.set('settings', { ...UserStorage.get('settings'), darkMode: state.darkMode });
+            }
             if (window.Chart) {
-                updateAnalyticsCharts(JSON.parse(localStorage.getItem('sessionHistory') || '[]'));
+                updateAnalyticsCharts(UserStorage.get('sessionHistory') || []);
             }
         }
 
@@ -783,7 +1079,7 @@
                 [state.tasks[state.currentTaskIndex]] : 
                 state.tasks;
 
-            if (!tasksToShow[0]) return; // Guard against undefined tasks
+            if (!tasksToShow[0]) return;
 
             taskDisplay.innerHTML = tasksToShow.map(task => `
                 <div class="p-4 border rounded-lg dark:border-gray-600 dark:bg-gray-700">
@@ -816,12 +1112,14 @@
                 taskDisplay.innerHTML += `
                     <div class="flex justify-between mt-4">
                         <button onclick="moveToPreviousTask()" 
-                            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors
+                                   ${state.currentTaskIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
                             ${state.currentTaskIndex === 0 ? 'disabled' : ''}>
                             Previous Task
                         </button>
                         <button onclick="moveToNextTask()" 
-                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors
+                                   ${state.currentTaskIndex === state.tasks.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
                             ${state.currentTaskIndex === state.tasks.length - 1 ? 'disabled' : ''}>
                             Next Task
                         </button>
@@ -832,54 +1130,7 @@
             updateTaskCounts();
         }
 
-        function toggleTaskCompletion(taskId, subtaskId = null) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (!task) return;
-
-            if (subtaskId === null) {
-                task.completed = !task.completed;
-                task.subtasks.forEach(st => st.completed = task.completed);
-                if (task.completed && state.focusMode) {
-                    setTimeout(() => moveToNextTask(), 500);
-                }
-            } else {
-                const subtask = task.subtasks.find(st => st.id === subtaskId);
-                if (subtask) {
-                    subtask.completed = !subtask.completed;
-                    task.completed = task.subtasks.every(st => st.completed);
-                    if (task.completed && state.focusMode) {
-                        setTimeout(() => moveToNextTask(), 500);
-                    }
-                }
-            }
-
-            renderTaskDisplay();
-            updateProgress();
-        }
-
         // Timer functionality
-        function updateTaskCounts() {
-            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
-            const completedTasks = state.tasks.reduce((acc, task) => {
-                return acc + (task.completed ? task.subtasks.length + 1 : 
-                    task.subtasks.filter(st => st.completed).length);
-            }, 0);
-
-            document.getElementById('completedTaskCount').textContent = completedTasks;
-            document.getElementById('totalTaskCount').textContent = totalTasks;
-        }
-
-        function updateProgress() {
-            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
-            const completedTasks = state.tasks.reduce((acc, task) => {
-                return acc + (task.completed ? task.subtasks.length + 1 : 
-                    task.subtasks.filter(st => st.completed).length);
-            }, 0);
-
-            const progress = (completedTasks / totalTasks) * 100;
-            document.getElementById('taskProgress').style.width = `${progress}%`;
-        }
-
         function toggleTimer() {
             if (state.paused) {
                 startTimer();
@@ -932,7 +1183,104 @@
             updateFocusScore();
         }
 
-        // Calendar functionality
+        function handleTimerComplete() {
+            clearInterval(state.timer);
+            if (!allTasksCompleted()) {
+                alertify.confirm('Time\'s Up!', 'Would you like to extend the session?',
+                    function() {
+                        state.totalTime += 15 * 60 * 1000; // Add 15 minutes
+                        startTimer();
+                    },
+                    function() {
+                        completeSession();
+                    }
+                );
+            } else {
+                completeSession();
+            }
+        }
+
+        function checkForBreak() {
+            if (state.breakMode === 'none' || state.paused) return;
+
+            const workTime = state.breakMode === 'pomodoro' ? 25 * 60 * 1000 : 50 * 60 * 1000;
+            const breakTime = state.breakMode === 'pomodoro' ? 5 * 60 * 1000 : 10 * 60 * 1000;
+
+            if (!state.nextBreak) {
+                state.nextBreak = state.startTime + workTime;
+            }
+
+            if (Date.now() >= state.nextBreak) {
+                pauseTimer();
+                state.nextBreak = Date.now() + workTime + breakTime;
+                alertify.alert('Break Time!', 
+                    `Time for a ${state.breakMode === 'pomodoro' ? '5' : '10'} minute break!`);
+            }
+
+            // Update next break display
+            const timeToBreak = Math.max(0, state.nextBreak - Date.now());
+            document.getElementById('nextBreakTime').textContent = formatTime(timeToBreak);
+        }
+
+        function updateFocusScore() {
+            const elapsedMinutes = state.elapsedTime / (1000 * 60);
+            const baseScore = Math.max(0, 100 - Math.floor(elapsedMinutes / 30) * 5);
+            document.getElementById('focusScore').textContent = `${baseScore}%`;
+        }
+
+        // Task completion functions
+        function toggleTaskCompletion(taskId, subtaskId = null) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (subtaskId === null) {
+                task.completed = !task.completed;
+                task.subtasks.forEach(st => st.completed = task.completed);
+                if (task.completed && state.focusMode) {
+                    setTimeout(() => moveToNextTask(), 500);
+                }
+            } else {
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (subtask) {
+                    subtask.completed = !subtask.completed;
+                    task.completed = task.subtasks.every(st => st.completed);
+                    if (task.completed && state.focusMode) {
+                        setTimeout(() => moveToNextTask(), 500);
+                    }
+                }
+            }
+
+            renderTaskDisplay();
+            updateProgress();
+        }
+
+        function updateTaskCounts() {
+            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = state.tasks.reduce((acc, task) => {
+                return acc + (task.completed ? task.subtasks.length + 1 : 
+                    task.subtasks.filter(st => st.completed).length);
+            }, 0);
+
+            document.getElementById('completedTaskCount').textContent = completedTasks;
+            document.getElementById('totalTaskCount').textContent = totalTasks;
+        }
+
+        function updateProgress() {
+            const totalTasks = state.tasks.reduce((acc, task) => acc + task.subtasks.length + 1, 0);
+            const completedTasks = state.tasks.reduce((acc, task) => {
+                return acc + (task.completed ? task.subtasks.length + 1 : 
+                    task.subtasks.filter(st => st.completed).length);
+            }, 0);
+
+            const progress = (completedTasks / totalTasks) * 100;
+            document.getElementById('taskProgress').style.width = `${progress}%`;
+        }
+
+        function allTasksCompleted() {
+            return state.tasks.every(task => task.completed);
+        }
+
+        // Calendar functions
         function cleanupOldTasks() {
             const today = new Date();
             const twoDaysAgo = new Date(today);
@@ -946,142 +1294,35 @@
                 }
             });
 
-            if (hasChanges) {
-                localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
+            if (hasChanges && state.currentUser) {
+                UserStorage.set('calendarTasks', state.calendarTasks);
             }
         }
 
-        function toggleCalendarView() {
-            hideAllViews();
-            document.getElementById('calendarView').classList.remove('hidden');
-            renderCalendar();
-        }
-
-        function renderCalendar() {
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            
-            const days = [yesterday];
-            for (let i = 0; i < 8; i++) {
-                const date = new Date(today);
-                date.setDate(date.getDate() + i);
-                days.push(date);
-            }
-
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = days.map(date => {
-                const dateStr = date.toISOString().split('T')[0];
-                const isToday = date.toDateString() === today.toDateString();
-                const tasks = state.calendarTasks[dateStr] || [];
-
-                return `
-                    <div class="calendar-day ${isToday ? 'current-day' : ''} transform hover:scale-[1.02] transition-transform">
-                        <div class="flex flex-col">
-                            <div class="flex justify-between items-center mb-4 pb-2 border-b dark:border-gray-700">
-                                <div class="flex flex-col">
-                                    <h3 class="font-bold text-lg text-gray-800 dark:text-white">
-                                        ${date.toLocaleDateString('en-US', { weekday: 'short' })}
-                                    </h3>
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">
-                                        ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                </div>
-                                <button onclick="addCalendarTask('${dateStr}')"
-                                    class="px-3 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 
-                                        transform hover:scale-105 transition-all text-sm flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                    Add
-                                </button>
-                            </div>
-                            <div class="space-y-2 task-list overflow-y-auto" style="max-height: 300px;">
-                                ${tasks.length === 0 ? `
-                                    <div class="text-center text-gray-500 dark:text-gray-400 py-4">
-                                        <p class="text-sm">No tasks yet</p>
-                                    </div>
-                                ` : ''}
-                                ${tasks.map((task, index) => `
-                                    <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center flex-1">
-                                                <input type="checkbox" 
-                                                    ${task.completed ? 'checked' : ''} 
-                                                    onchange="toggleCalendarTask('${dateStr}', ${index})"
-                                                    class="w-4 h-4 mr-2 cursor-pointer">
-                                                <span class="flex-grow ${task.completed ? 'line-through' : ''} dark:text-white">
-                                                    ${task.title}
-                                                </span>
-                                            </div>
-                                            <div class="flex items-center space-x-1">
-                                                <button onclick="addCalendarSubtask('${dateStr}', ${index})"
-                                                    class="p-1 text-blue-500 hover:text-blue-600 rounded">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                            d="M12 4v16m8-8H4"/>
-                                                    </svg>
-                                                </button>
-                                                <button onclick="deleteCalendarTask('${dateStr}', ${index})"
-                                                    class="p-1 text-red-500 hover:text-red-600 rounded">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        ${task.subtasks ? task.subtasks.map((subtask, subIndex) => `
-                                            <div class="ml-6 flex items-center justify-between mt-2">
-                                                <div class="flex items-center flex-1">
-                                                    <input type="checkbox" 
-                                                        ${subtask.completed ? 'checked' : ''} 
-                                                        onchange="toggleCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
-                                                        class="w-3 h-3 mr-2 cursor-pointer">
-                                                    <span class="${subtask.completed ? 'line-through' : ''} text-sm dark:text-gray-300">
-                                                        ${subtask.text}
-                                                    </span>
-                                                </div>
-                                                <button onclick="deleteCalendarSubtask('${dateStr}', ${index}, ${subIndex})"
-                                                    class="p-1 text-red-500 hover:text-red-600 rounded">
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                            d="M6 18L18 6M6 6l12 12"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        `).join('') : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            updateCalendarTaskCount();
-        }
-
-
-        function addCalendarSubtask(dateStr, taskIndex) {
-            alertify.prompt('New Subtask', 'Enter subtask:', '',
+        function addCalendarTask(dateStr) {
+            alertify.prompt('New Task', 'Enter task title:', '', 
                 function(evt, value) {
-                    if (!value.trim()) return;
-                    
-                    const task = state.calendarTasks[dateStr][taskIndex];
-                    if (!task.subtasks) {
-                        task.subtasks = [];
+                    if (!value || !value.trim()) {
+                        alertify.error('Please enter a task title');
+                        return;
                     }
                     
-                    task.subtasks.push({
-                        text: value,
-                        completed: false
+                    if (!state.calendarTasks[dateStr]) {
+                        state.calendarTasks[dateStr] = [];
+                    }
+                    
+                    state.calendarTasks[dateStr].push({
+                        id: Date.now(),
+                        title: value.trim(),
+                        completed: false,
+                        subtasks: []
                     });
                     
-                    localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
+                    UserStorage.set('calendarTasks', state.calendarTasks);
                     renderCalendar();
+                    alertify.success('Task added successfully');
                 }
-            );
+            ).set('closable', false);
         }
 
         function toggleCalendarTask(dateStr, index) {
@@ -1096,19 +1337,7 @@
                 }, 500);
             }
             
-            localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
-            renderCalendar();
-        }
-
-        function toggleCalendarSubtask(dateStr, taskIndex, subtaskIndex) {
-            const task = state.calendarTasks[dateStr][taskIndex];
-            const subtask = task.subtasks[subtaskIndex];
-            subtask.completed = !subtask.completed;
-            
-            // Update main task completion status based on subtasks
-            task.completed = task.subtasks.every(st => st.completed);
-            
-            localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
+            UserStorage.set('calendarTasks', state.calendarTasks);
             renderCalendar();
         }
 
@@ -1117,95 +1346,44 @@
             if (state.calendarTasks[dateStr].length === 0) {
                 delete state.calendarTasks[dateStr];
             }
-            localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
+            UserStorage.set('calendarTasks', state.calendarTasks);
             renderCalendar();
         }
 
-        function deleteCalendarSubtask(dateStr, taskIndex, subtaskIndex) {
-            state.calendarTasks[dateStr][taskIndex].subtasks.splice(subtaskIndex, 1);
-            localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
-            renderCalendar();
+        function addCalendarSubtask(dateStr, taskIndex) {
+            alertify.prompt('New Subtask', 'Enter subtask:', '',
+                function(evt, value) {
+                    if (!value.trim()) return;
+                    
+                    const task = state.calendarTasks[dateStr][taskIndex];
+                    if (!task.subtasks) {
+                        task.subtasks = [];
+                    }
+                    
+                    task.subtasks.push({
+                        id: Date.now(),
+                        text: value.trim(),
+                        completed: false
+                    });
+                    
+                    UserStorage.set('calendarTasks', state.calendarTasks);
+                    renderCalendar();
+                }
+            );
         }
 
-        function updateCalendarTaskCount() {
-            const totalTasks = Object.values(state.calendarTasks)
-                .reduce((sum, tasks) => sum + tasks.length, 0);
+        function toggleCalendarSubtask(dateStr, taskIndex, subtaskIndex) {
+            const task = state.calendarTasks[dateStr][taskIndex];
+            const subtask = task.subtasks[subtaskIndex];
+            subtask.completed = !subtask.completed;
             
-            document.getElementById('taskCount').textContent = 
-                `Total Tasks: ${totalTasks}`;
+            task.completed = task.subtasks.every(st => st.completed);
+            
+            UserStorage.set('calendarTasks', state.calendarTasks);
+            renderCalendar();
         }
 
-
-        // Journal functionality
-        function toggleJournalView() {
-            hideAllViews();
-            document.getElementById('journalView').classList.remove('hidden');
-            renderJournalEntries();
-        }
-
-        function renderJournalEntries() {
-            const entriesContainer = document.getElementById('journalEntries');
-            if (state.journalEntries.length === 0) {
-                entriesContainer.innerHTML = `
-                    <div class="flex flex-col items-center justify-center p-8 text-gray-500 dark:text-gray-400">
-                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-                            </path>
-                        </svg>
-                        <p class="text-xl mb-2">No journal entries yet</p>
-                        <p>Complete a study session to add your first reflection</p>
-                    </div>`;
-                return;
-            }
-
-            entriesContainer.innerHTML = state.journalEntries
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .map(entry => `
-                    <div class="journal-entry hover:shadow-lg transition-shadow">
-                        <div class="flex justify-between items-center mb-4 border-b pb-2">
-                            <div class="flex items-center">
-                                <div class="text-lg font-semibold text-gray-800 dark:text-white">
-                                    ${new Date(entry.date).toLocaleDateString('en-US', {
-                                        weekday: 'long',
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    })}
-                                </div>
-                            </div>
-                            <span class="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-sm">
-                                ${formatTime(entry.sessionData.duration)}
-                            </span>
-                        </div>
-                        <div class="prose dark:prose-invert max-w-none">
-                            <p class="text-gray-800 dark:text-gray-200 text-lg mb-4">${entry.content}</p>
-                        </div>
-                        <div class="mt-4 grid grid-cols-3 gap-4 pt-3 border-t">
-                            <div class="text-center">
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Mode</div>
-                                <div class="font-semibold text-gray-800 dark:text-gray-200">
-                                    ${entry.sessionData.mode.charAt(0).toUpperCase() + entry.sessionData.mode.slice(1)}
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Completion Rate</div>
-                                <div class="font-semibold text-gray-800 dark:text-gray-200">
-                                    ${entry.sessionData.completionRate}%
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-sm text-gray-500 dark:text-gray-400">Tasks Completed</div>
-                                <div class="font-semibold text-gray-800 dark:text-gray-200">
-                                    ${entry.sessionData.tasks.filter(t => t.completed).length}/${entry.sessionData.tasks.length}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-        }
-
-        // Analytics and reporting
+        // Session completion and reporting
         function completeSession() {
             clearInterval(state.timer);
             const sessionData = {
@@ -1224,18 +1402,16 @@
                 'Write a brief reflection or gratitude note (max 200 words):',
                 '',
                 function(evt, value) {
-                    const journalEntry = {
-                        date: sessionData.date,
-                        content: value.slice(0, 200), // Enforce 200 word limit
-                        sessionData: sessionData
-                    };
-                    state.journalEntries.push(journalEntry);
-                    localStorage.setItem('journalEntries', JSON.stringify(state.journalEntries));
+                    if (value.trim()) {
+                        const journalEntry = {
+                            date: sessionData.date,
+                            content: value.slice(0, 200),
+                            sessionData: sessionData
+                        };
+                        state.journalEntries.push(journalEntry);
+                        UserStorage.set('journalEntries', state.journalEntries);
+                    }
                     
-                    saveSessionData(sessionData);
-                    showSessionReport(sessionData);
-                },
-                function() {
                     saveSessionData(sessionData);
                     showSessionReport(sessionData);
                 }
@@ -1252,484 +1428,13 @@
             return Math.round((completedTasks / totalTasks) * 100);
         }
 
-        function showSessionReport(sessionData) {
-            hideAllViews();
-            document.getElementById('reportView').classList.remove('hidden');
-            document.getElementById('reportContent').innerHTML = generateReport(sessionData);
+        function saveSessionData(sessionData) {
+            const history = UserStorage.get('sessionHistory') || [];
+            history.push(sessionData);
+            UserStorage.set('sessionHistory', history);
         }
 
-        function generateReport(sessionData) {
-            return `
-                <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="stat-card">
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Time</h4>
-                            <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                                ${formatTime(sessionData.duration)}
-                            </p>
-                        </div>
-                        <div class="stat-card">
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Tasks Completed</h4>
-                            <p class="text-3xl font-bold text-green-600 dark:text-green-400">
-                                ${sessionData.completionRate}%
-                            </p>
-                        </div>
-                        <div class="stat-card">
-                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Mode</h4>
-                            <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                                ${sessionData.mode}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="card p-4">
-                        <h3 class="text-lg font-bold mb-4 text-gray-800 dark:text-white">Task Summary</h3>
-                        <div class="space-y-4">
-                            ${sessionData.tasks.map(task => `
-                                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="font-medium text-gray-800 dark:text-white">${task.title}</span>
-                                        <span class="${task.completed ? 'text-green-500' : 'text-red-500'}">
-                                            ${task.completed ? '✓ Completed' : '× Incomplete'}
-                                        </span>
-                                    </div>
-                                    ${task.subtasks.length > 0 ? `
-                                        <div class="ml-4 space-y-1">
-                                            ${task.subtasks.map(subtask => `
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-gray-600 dark:text-gray-300">${subtask.title}</span>
-                                                    <span class="${subtask.completed ? 'text-green-500' : 'text-red-500'}">
-                                                        ${subtask.completed ? '✓' : '×'}
-                                                    </span>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-
-        function updateAnalyticsCharts(history) {
-            // Daily Pattern Chart
-            const ctx1 = document.getElementById('dailyPatternChart').getContext('2d');
-            const dailyData = getDailyPatternData(history);
-            
-            if (window.dailyPatternChart) {
-                window.dailyPatternChart.destroy();
-            }
-            
-            window.dailyPatternChart = new Chart(ctx1, {
-                type: 'bar',
-                data: dailyData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                            },
-                            grid: {
-                                color: document.body.classList.contains('dark') ? '#2d3748' : '#e2e8f0'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                            },
-                            grid: {
-                                color: document.body.classList.contains('dark') ? '#2d3748' : '#e2e8f0'
-                            }
-                        }
-                    }
-                }
-            });
-
-
-
-            // Focus Distribution Chart
-            const ctx2 = document.getElementById('focusDistributionChart').getContext('2d');
-            const focusData = getFocusDistributionData(history);
-            
-
-function updateTaskRankings(history) {
-    // Gather all unique tasks and their completion stats
-    const taskStats = {};
-    
-    history.forEach(session => {
-        session.tasks.forEach(task => {
-            if (!taskStats[task.title]) {
-                taskStats[task.title] = {
-                    total: 0,
-                    completed: 0,
-                    title: task.title
-                };
-            }
-            taskStats[task.title].total++;
-            if (task.completed) {
-                taskStats[task.title].completed++;
-            }
-        });
-    });
-
-    // Convert to array and calculate completion rates
-    const tasksArray = Object.values(taskStats)
-        .filter(task => task.total >= 2) // Only include tasks that appear more than once
-        .map(task => ({
-            ...task,
-            completionRate: (task.completed / task.total) * 100
-        }));
-
-    // Sort for most and least completed
-    const mostCompleted = [...tasksArray]
-        .sort((a, b) => b.completionRate - a.completionRate)
-        .slice(0, 5);
-    
-    const leastCompleted = [...tasksArray]
-        .sort((a, b) => a.completionRate - b.completionRate)
-        .slice(0, 5);
-
-    // Render rankings
-    document.getElementById('mostCompletedTasks').innerHTML = mostCompleted.length > 0 ? 
-        mostCompleted.map((task, index) => `
-            <div class="flex items-center justify-between p-2 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''} rounded">
-                <div class="flex items-center">
-                    <span class="w-6 h-6 flex items-center justify-center bg-blue-100 dark:bg-blue-900 
-                                text-blue-800 dark:text-blue-200 rounded-full text-sm mr-3">
-                        ${index + 1}
-                    </span>
-                    <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
-                </div>
-                <div class="flex items-center">
-                    <span class="text-green-600 dark:text-green-400 font-semibold">
-                        ${Math.round(task.completionRate)}%
-                    </span>
-                    <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">
-                        (${task.completed}/${task.total})
-                    </span>
-                </div>
-            </div>
-        `).join('') :
-        '<div class="text-gray-500 dark:text-gray-400 text-center py-4">Complete more sessions to see rankings</div>';
-
-    document.getElementById('leastCompletedTasks').innerHTML = leastCompleted.length > 0 ?
-        leastCompleted.map((task, index) => `
-            <div class="flex items-center justify-between p-2 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : ''} rounded">
-                <div class="flex items-center">
-                    <span class="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900 
-                                text-red-800 dark:text-red-200 rounded-full text-sm mr-3">
-                        ${index + 1}
-                    </span>
-                    <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
-                </div>
-                <div class="flex items-center">
-                    <span class="text-red-600 dark:text-red-400 font-semibold">
-                        ${Math.round(task.completionRate)}%
-                    </span>
-                    <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">
-                        (${task.completed}/${task.total})
-                    </span>
-                </div>
-            </div>
-        `).join('') :
-        '<div class="text-gray-500 dark:text-gray-400 text-center py-4">Complete more sessions to see rankings</div>';
-}
-
-function updateInsights(history) {
-    const insights = generateInsights(history);
-    document.getElementById('analyticsInsights').innerHTML = insights
-        .map(insight => `
-            <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:shadow-md transition-shadow">
-                <div class="flex items-center mb-3">
-                    <span class="text-2xl mr-3">${insight.icon}</span>
-                    <h4 class="font-semibold text-gray-800 dark:text-white">${insight.title}</h4>
-                </div>
-                <p class="text-gray-600 dark:text-gray-300">${insight.message}</p>
-                ${insight.recommendation ? `
-                    <p class="text-blue-600 dark:text-blue-400 mt-2 text-sm">
-                        💡 Recommendation: ${insight.recommendation}
-                    </p>
-                ` : ''}
-            </div>
-        `).join('');
-}
-
-function generateInsights(history) {
-    if (history.length === 0) {
-        return [{
-            icon: '📊',
-            title: 'No Data Yet',
-            message: 'Complete your first study session to see personalized insights!'
-        }];
-    }
-
-    const insights = [];
-
-    // Most Productive Time
-    const hourlyPerformance = analyzeHourlyPerformance(history);
-    if (hourlyPerformance.bestHour !== undefined) {
-        insights.push({
-            icon: '⏰',
-            title: 'Peak Performance Time',
-            message: `You're most productive at ${hourlyPerformance.bestHour}:00.`,
-            recommendation: 'Schedule important tasks during this time window.'
-        });
-    }
-
-    // Session Length Analysis
-    const sessionLengths = history.map(s => s.duration);
-    const avgLength = sessionLengths.reduce((a, b) => a + b, 0) / sessionLengths.length;
-    if (avgLength > 0) {
-        const optimalLength = avgLength > 2 * 60 * 60 * 1000 ? 'shorter' : 'longer';
-        insights.push({
-            icon: '⚖️',
-            title: 'Session Duration',
-            message: `Your average session is ${formatTime(avgLength)}.`,
-            recommendation: `Consider ${optimalLength} sessions for better focus and retention.`
-        });
-    }
-
-    // Completion Rate Trend
-    const completionRates = history.map(s => s.completionRate);
-    const recentTrend = analyzeTrend(completionRates.slice(-5));
-    insights.push({
-        icon: '📈',
-        title: 'Recent Progress',
-        message: recentTrend.message,
-        recommendation: recentTrend.recommendation
-    });
-
-    // Break Pattern Analysis
-    const breakPattern = analyzeBreakPatterns(history);
-    insights.push({
-        icon: '☕',
-        title: 'Break Patterns',
-        message: breakPattern.message,
-        recommendation: breakPattern.recommendation
-    });
-
-    return insights;
-}
-
-function analyzeHourlyPerformance(history) {
-    const hourlyStats = Array(24).fill().map(() => ({
-        sessions: 0,
-        completionRate: 0
-    }));
-
-    history.forEach(session => {
-        const hour = new Date(session.date).getHours();
-        hourlyStats[hour].sessions++;
-        hourlyStats[hour].completionRate += session.completionRate;
-    });
-
-    let bestHour = undefined;
-    let bestRate = 0;
-
-    hourlyStats.forEach((stats, hour) => {
-        if (stats.sessions > 0) {
-            const avgRate = stats.completionRate / stats.sessions;
-            if (avgRate > bestRate) {
-                bestRate = avgRate;
-                bestHour = hour;
-            }
-        }
-    });
-
-    return { bestHour };
-}
-
-function analyzeTrend(rates) {
-    if (rates.length < 2) {
-        return {
-            message: "Complete more sessions to see your progress trend.",
-            recommendation: "Aim for consistent daily practice."
-        };
-    }
-
-    const trend = rates[rates.length - 1] - rates[0];
-    
-    if (trend > 5) {
-        return {
-            message: "Your completion rate is improving! Keep up the momentum.",
-            recommendation: "Try to maintain this positive trend by setting realistic goals."
-        };
-    } else if (trend < -5) {
-        return {
-            message: "Your completion rate has decreased recently.",
-            recommendation: "Consider breaking down tasks into smaller, more manageable chunks."
-        };
-    } else {
-        return {
-            message: "Your performance has been steady.",
-            recommendation: "Challenge yourself with slightly more difficult goals."
-        };
-    }
-}
-
-function analyzeBreakPatterns(history) {
-    const hasBreaks = history.some(session => session.breakMode !== 'none');
-    
-    if (!hasBreaks) {
-        return {
-            message: "You haven't been taking structured breaks during your sessions.",
-            recommendation: "Try the Pomodoro technique (25min work/5min break) to maintain focus."
-        };
-    }
-
-    const preferredBreak = history.reduce((acc, session) => {
-        if (!acc[session.breakMode]) acc[session.breakMode] = 0;
-        acc[session.breakMode]++;
-        return acc;
-    }, {});
-
-    const mostUsedBreak = Object.entries(preferredBreak)
-        .sort((a, b) => b[1] - a[1])[0][0];
-
-    return {
-        message: `You prefer ${mostUsedBreak === 'pomodoro' ? 'shorter, frequent' : 'longer'} breaks.`,
-        recommendation: mostUsedBreak === 'pomodoro' ? 
-            "This is great for maintaining consistent focus!" :
-            "Consider trying shorter, more frequent breaks to prevent fatigue."
-    };
-}
-
-
-
-
-            if (window.focusDistributionChart) {
-                window.focusDistributionChart.destroy();
-            }
-            
-            window.focusDistributionChart = new Chart(ctx2, {
-                type: 'doughnut',
-                data: focusData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Update rankings and insights
-            updateTaskRankings(history);
-            updateInsights(history);
-        }
-
-
-        // Utility functions
-        function formatTime(ms) {
-            const hours = Math.floor(ms / (1000 * 60 * 60));
-            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-
-
-        function hideAllViews() {
-            const views = [
-                'loginForm', 
-                'modeSelection', 
-                'setupForm', 
-                'sessionView', 
-                'reportView', 
-                'analyticsView',
-                'journalView',
-                'calendarView'
-            ];
-            
-            views.forEach(viewId => {
-                const element = document.getElementById(viewId);
-                if (element) {
-                    element.classList.add('hidden');
-                }
-            });
-        }
-
-        function startNewSession() {
-            // Reset state
-            state = {
-                ...state,
-                mode: null,
-                tasks: [],
-                currentTask: 0,
-                timer: null,
-                startTime: null,
-                totalTime: 0,
-                elapsedTime: 0,
-                paused: true,
-                taskTimes: {},
-                breakMode: null,
-                nextBreak: null,
-                focusMode: false,
-                currentTaskIndex: 0
-            };
-            
-            // Go to mode selection
-            goToHomepage();
-        }
-
-        function goToHomepage() {
-            hideAllViews();
-            document.getElementById('modeSelection').classList.remove('hidden');
-        }
-
-        // First, let's fix the calendar task addition
-        function addCalendarTask(dateStr) {
-            alertify.prompt('New Task', 'Enter task title:', '', 
-                function(evt, value) {
-                    if (!value || !value.trim()) {
-                        alertify.error('Please enter a task title');
-                        return;
-                    }
-                    
-                    // Initialize the calendar tasks for this date if it doesn't exist
-                    if (!state.calendarTasks[dateStr]) {
-                        state.calendarTasks[dateStr] = [];
-                    }
-                    
-                    // Add the new task
-                    state.calendarTasks[dateStr].push({
-                        id: Date.now(), // Add a unique identifier
-                        title: value.trim(),
-                        completed: false,
-                        subtasks: []
-                    });
-                    
-                    // Save to localStorage
-                    localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
-                    
-                    // Re-render the calendar
-                    renderCalendar();
-                    
-                    // Show confirmation
-                    alertify.success('Task added successfully');
-                },
-                function() {
-                    // Cancel callback - do nothing
-                }
-            );
-        }
-
-        // Now let's fix the analytics rendering
+        // Analytics functions
         function updateAnalytics(history) {
             if (!history || history.length === 0) {
                 alertify.error('No session history available');
@@ -1762,7 +1467,6 @@ function analyzeBreakPatterns(history) {
             // Initialize Daily Pattern Chart
             const dailyCtx = document.getElementById('dailyPatternChart');
             if (dailyCtx) {
-                // Destroy existing chart if it exists
                 if (window.dailyPatternChart) {
                     window.dailyPatternChart.destroy();
                 }
@@ -1808,7 +1512,6 @@ function analyzeBreakPatterns(history) {
             // Initialize Focus Distribution Chart
             const focusCtx = document.getElementById('focusDistributionChart');
             if (focusCtx) {
-                // Destroy existing chart if it exists
                 if (window.focusDistributionChart) {
                     window.focusDistributionChart.destroy();
                 }
@@ -1834,7 +1537,6 @@ function analyzeBreakPatterns(history) {
             }
         }
 
-        // Helper function for daily pattern data
         function getDailyPatternData(history) {
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const dailyTotals = Array(7).fill(0);
@@ -1856,7 +1558,6 @@ function analyzeBreakPatterns(history) {
             };
         }
 
-        // Helper function for focus distribution data
         function getFocusDistributionData(history) {
             const completionRates = history.map(session => session.completionRate);
             const high = completionRates.filter(rate => rate >= 80).length;
@@ -1868,9 +1569,9 @@ function analyzeBreakPatterns(history) {
                 datasets: [{
                     data: [high, medium, low],
                     backgroundColor: [
-                        'rgba(16, 185, 129, 0.8)', // Green
-                        'rgba(251, 191, 36, 0.8)', // Yellow
-                        'rgba(239, 68, 68, 0.8)'   // Red
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(251, 191, 36, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
                     ],
                     borderColor: [
                         'rgba(16, 185, 129, 1)',
@@ -1882,39 +1583,93 @@ function analyzeBreakPatterns(history) {
             };
         }
 
-        // Make sure the analytics view is properly initialized when shown
-        function toggleAnalyticsView() {
-            const history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
-            if (history.length === 0) {
-                alertify.error('No sessions recorded yet');
-                return;
+        // Export analytics
+        function exportAnalytics(format) {
+            if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const history = UserStorage.get('sessionHistory') || [];
+                
+                doc.setFont('helvetica');
+                doc.setFontSize(20);
+                doc.text('Study Timer Analytics Report', 20, 20);
+                
+                const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
+                const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+                
+                doc.setFontSize(12);
+                doc.text(`Total Study Time: ${formatTime(totalTime)}`, 20, 40);
+                doc.text(`Total Sessions: ${history.length}`, 20, 50);
+                doc.text(`Average Completion Rate: ${Math.round(avgCompletion)}%`, 20, 60);
+                
+                doc.save(`study-analytics-${state.currentUser}.pdf`);
+                alertify.success('Analytics exported successfully');
             }
+        }
 
+        // Utility functions
+        function formatTime(ms) {
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function hideAllViews() {
+            const views = [
+                'loginForm', 
+                'modeSelection', 
+                'setupForm', 
+                'sessionView', 
+                'reportView', 
+                'analyticsView',
+                'journalView',
+                'calendarView'
+            ];
+            
+            views.forEach(viewId => {
+                const element = document.getElementById(viewId);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+        }
+
+        function resetStatistics() {
+            if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
+                UserStorage.set('sessionHistory', []);
+                hideAllViews();
+                document.getElementById('modeSelection').classList.remove('hidden');
+                alertify.success('Statistics have been reset');
+            }
+        }
+
+        function startNewSession() {
+            // Reset state
+            state = {
+                ...state,
+                mode: null,
+                tasks: [],
+                currentTask: 0,
+                timer: null,
+                startTime: null,
+                totalTime: 0,
+                elapsedTime: 0,
+                paused: true,
+                taskTimes: {},
+                breakMode: null,
+                nextBreak: null,
+                focusMode: false,
+                currentTaskIndex: 0
+            };
+            
+            goToHomepage();
+        }
+
+        function goToHomepage() {
             hideAllViews();
-            document.getElementById('analyticsView').classList.remove('hidden');
-            setTimeout(() => {
-                updateAnalytics(history);
-            }, 100); // Small delay to ensure DOM is ready
+            document.getElementById('modeSelection').classList.remove('hidden');
         }
-
-        // Update the saveSessionData function to ensure proper data structure
-        function saveSessionData(sessionData) {
-            try {
-                let history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
-                history.push({
-                    ...sessionData,
-                    date: new Date().toISOString(), // Ensure date is always included
-                    duration: sessionData.duration || 0,
-                    completionRate: sessionData.completionRate || 0,
-                    tasks: sessionData.tasks || []
-                });
-                localStorage.setItem('sessionHistory', JSON.stringify(history));
-            } catch (error) {
-                console.error('Error saving session data:', error);
-                alertify.error('Error saving session data');
-            }
-        }
-
     </script>
 </body>
 </html>
