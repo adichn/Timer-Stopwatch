@@ -1062,26 +1062,6 @@
             updateCalendarTaskCount();
         }
 
-        function addCalendarTask(dateStr) {
-            alertify.prompt('New Task', 'Enter task title:', '',
-                function(evt, value) {
-                    if (!value.trim()) return;
-                    
-                    if (!state.calendarTasks[dateStr]) {
-                        state.calendarTasks[dateStr] = [];
-                    }
-                    
-                    state.calendarTasks[dateStr].push({
-                        title: value.trim(),
-                        completed: false,
-                        subtasks: []
-                    });
-                    
-                    localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
-                    renderCalendar();
-                }
-            ).set('closable', false); // This ensures the dialog doesn't close until user clicks a button
-        }
 
         function addCalendarSubtask(dateStr, taskIndex) {
             alertify.prompt('New Subtask', 'Enter subtask:', '',
@@ -1333,31 +1313,6 @@
             `;
         }
 
-        // Analytics functions
-        function toggleAnalyticsView() {
-            const history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
-            if (history.length === 0) {
-                alertify.error('No sessions recorded yet');
-                return;
-            }
-
-            hideAllViews();
-            document.getElementById('analyticsView').classList.remove('hidden');
-            updateAnalytics(history);
-        }
-
-        function updateAnalytics(history) {
-            const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
-            const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
-
-            document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
-            document.getElementById('totalSessions').textContent = history.length;
-            document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
-
-            updateAnalyticsCharts(history);
-            updateTaskRankings(history);
-            updateInsights(history);
-        }
 
         function updateAnalyticsCharts(history) {
             // Daily Pattern Chart
@@ -1408,30 +1363,6 @@
             const ctx2 = document.getElementById('focusDistributionChart').getContext('2d');
             const focusData = getFocusDistributionData(history);
             
-            function getFocusDistributionData(history) {
-                const completionRates = history.map(session => session.completionRate);
-                const high = completionRates.filter(rate => rate >= 80).length;
-                const medium = completionRates.filter(rate => rate >= 50 && rate < 80).length;
-                const low = completionRates.filter(rate => rate < 50).length;
-
-                return {
-                    labels: ['High Focus (>80%)', 'Medium Focus (50-80%)', 'Low Focus (<50%)'],
-                    datasets: [{
-                        data: [high, medium, low],
-                        backgroundColor: [
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(251, 191, 36, 0.8)',
-                            'rgba(239, 68, 68, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgba(16, 185, 129, 1)',
-                            'rgba(251, 191, 36, 1)',
-                            'rgba(239, 68, 68, 1)'
-            ],
-            borderWidth: 1
-        }]
-    };
-}
 
 function updateTaskRankings(history) {
     // Gather all unique tasks and their completion stats
@@ -1703,26 +1634,6 @@ function analyzeBreakPatterns(history) {
             updateInsights(history);
         }
 
-        function getDailyPatternData(history) {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const dailyTotals = Array(7).fill(0);
-            
-            history.forEach(session => {
-                const day = new Date(session.date).getDay();
-                dailyTotals[day] += session.duration / (1000 * 60 * 60); // Convert to hours
-            });
-
-            return {
-                labels: days,
-                datasets: [{
-                    label: 'Study Hours',
-                    data: dailyTotals,
-                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
-                    borderColor: 'rgba(79, 70, 229, 1)',
-                    borderWidth: 1
-                }]
-            };
-        }
 
         // Utility functions
         function formatTime(ms) {
@@ -1732,11 +1643,6 @@ function analyzeBreakPatterns(history) {
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
-        function saveSessionData(sessionData) {
-            let history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
-            history.push(sessionData);
-            localStorage.setItem('sessionHistory', JSON.stringify(history));
-        }
 
         function hideAllViews() {
             const views = [
@@ -1784,6 +1690,229 @@ function analyzeBreakPatterns(history) {
         function goToHomepage() {
             hideAllViews();
             document.getElementById('modeSelection').classList.remove('hidden');
+        }
+
+        // First, let's fix the calendar task addition
+        function addCalendarTask(dateStr) {
+            alertify.prompt('New Task', 'Enter task title:', '', 
+                function(evt, value) {
+                    if (!value || !value.trim()) {
+                        alertify.error('Please enter a task title');
+                        return;
+                    }
+                    
+                    // Initialize the calendar tasks for this date if it doesn't exist
+                    if (!state.calendarTasks[dateStr]) {
+                        state.calendarTasks[dateStr] = [];
+                    }
+                    
+                    // Add the new task
+                    state.calendarTasks[dateStr].push({
+                        id: Date.now(), // Add a unique identifier
+                        title: value.trim(),
+                        completed: false,
+                        subtasks: []
+                    });
+                    
+                    // Save to localStorage
+                    localStorage.setItem('calendarTasks', JSON.stringify(state.calendarTasks));
+                    
+                    // Re-render the calendar
+                    renderCalendar();
+                    
+                    // Show confirmation
+                    alertify.success('Task added successfully');
+                },
+                function() {
+                    // Cancel callback - do nothing
+                }
+            );
+        }
+
+        // Now let's fix the analytics rendering
+        function updateAnalytics(history) {
+            if (!history || history.length === 0) {
+                alertify.error('No session history available');
+                return;
+            }
+
+            try {
+                // Calculate basic stats
+                const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
+                const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+
+                // Update summary statistics
+                document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
+                document.getElementById('totalSessions').textContent = history.length;
+                document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
+
+                // Initialize charts
+                initializeCharts(history);
+                
+                // Update rankings and insights
+                updateTaskRankings(history);
+                updateInsights(history);
+            } catch (error) {
+                console.error('Error updating analytics:', error);
+                alertify.error('Error updating analytics');
+            }
+        }
+
+        function initializeCharts(history) {
+            // Initialize Daily Pattern Chart
+            const dailyCtx = document.getElementById('dailyPatternChart');
+            if (dailyCtx) {
+                // Destroy existing chart if it exists
+                if (window.dailyPatternChart) {
+                    window.dailyPatternChart.destroy();
+                }
+
+                const dailyData = getDailyPatternData(history);
+                window.dailyPatternChart = new Chart(dailyCtx, {
+                    type: 'bar',
+                    data: dailyData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Hours',
+                                    color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                                },
+                                ticks: {
+                                    color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize Focus Distribution Chart
+            const focusCtx = document.getElementById('focusDistributionChart');
+            if (focusCtx) {
+                // Destroy existing chart if it exists
+                if (window.focusDistributionChart) {
+                    window.focusDistributionChart.destroy();
+                }
+
+                const focusData = getFocusDistributionData(history);
+                window.focusDistributionChart = new Chart(focusCtx, {
+                    type: 'doughnut',
+                    data: focusData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Helper function for daily pattern data
+        function getDailyPatternData(history) {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dailyTotals = Array(7).fill(0);
+            
+            history.forEach(session => {
+                const day = new Date(session.date).getDay();
+                dailyTotals[day] += session.duration / (1000 * 60 * 60); // Convert to hours
+            });
+
+            return {
+                labels: days,
+                datasets: [{
+                    label: 'Study Hours',
+                    data: dailyTotals,
+                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1
+                }]
+            };
+        }
+
+        // Helper function for focus distribution data
+        function getFocusDistributionData(history) {
+            const completionRates = history.map(session => session.completionRate);
+            const high = completionRates.filter(rate => rate >= 80).length;
+            const medium = completionRates.filter(rate => rate >= 50 && rate < 80).length;
+            const low = completionRates.filter(rate => rate < 50).length;
+
+            return {
+                labels: ['High Focus (>80%)', 'Medium Focus (50-80%)', 'Low Focus (<50%)'],
+                datasets: [{
+                    data: [high, medium, low],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)', // Green
+                        'rgba(251, 191, 36, 0.8)', // Yellow
+                        'rgba(239, 68, 68, 0.8)'   // Red
+                    ],
+                    borderColor: [
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(251, 191, 36, 1)',
+                        'rgba(239, 68, 68, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+        }
+
+        // Make sure the analytics view is properly initialized when shown
+        function toggleAnalyticsView() {
+            const history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
+            if (history.length === 0) {
+                alertify.error('No sessions recorded yet');
+                return;
+            }
+
+            hideAllViews();
+            document.getElementById('analyticsView').classList.remove('hidden');
+            setTimeout(() => {
+                updateAnalytics(history);
+            }, 100); // Small delay to ensure DOM is ready
+        }
+
+        // Update the saveSessionData function to ensure proper data structure
+        function saveSessionData(sessionData) {
+            try {
+                let history = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
+                history.push({
+                    ...sessionData,
+                    date: new Date().toISOString(), // Ensure date is always included
+                    duration: sessionData.duration || 0,
+                    completionRate: sessionData.completionRate || 0,
+                    tasks: sessionData.tasks || []
+                });
+                localStorage.setItem('sessionHistory', JSON.stringify(history));
+            } catch (error) {
+                console.error('Error saving session data:', error);
+                alertify.error('Error saving session data');
+            }
         }
 
     </script>
