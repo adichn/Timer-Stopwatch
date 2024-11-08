@@ -450,22 +450,6 @@
         </div>
     </div>
 
-    <div class="mb-4" id="apiKeySection">
-        <div class="flex items-center space-x-4">
-            <input 
-                type="password" 
-                id="apiKey" 
-                placeholder="Enter OpenAI API Key for enhanced insights"
-                class="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-            <button onclick="saveAPIKey()" 
-                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
-                Save Key
-            </button>
-        </div>
-    </div>
-
     <script>
         // Global state
         let state = {
@@ -1222,9 +1206,8 @@
                 `).join('');
         }
 
-        async function updateInsights(history) {
-            const insights = await AnalyticsGPT.generateInsights(history);
-            
+        function updateInsights(history) {
+            const insights = generateInsights(history);
             document.getElementById('analyticsInsights').innerHTML = insights
                 .map(insight => `
                     <div class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
@@ -1320,184 +1303,6 @@
                     : "Your completion rate has room for improvement. Try breaking tasks into smaller subtasks."
             };
         }
-        // API Key Management
-        function saveAPIKey() {
-            const key = document.getElementById('apiKey').value.trim();
-            if (key) {
-                localStorage.setItem('openai_api_key', key);
-                document.getElementById('apiKey').value = '';
-                alertify.success('API key saved. Enhanced insights enabled.');
-                updateAnalytics(JSON.parse(localStorage.getItem('sessionHistory') || '[]'));
-            }
-        }
-
-        function getAPIKey() {
-            return localStorage.getItem('openai_api_key');
-        }
-
-        // GPT Analytics Integration
-        const AnalyticsGPT = {
-            async generateInsights(data) {
-                const apiKey = getAPIKey();
-                if (!apiKey) {
-                    return this.getBasicInsights(data);
-                }
-
-                try {
-                    const analysisPrompt = this.generateAnalysisPrompt(data);
-                    const response = await this.callGPT(analysisPrompt, apiKey);
-                    return this.parseGPTResponse(response);
-                } catch (error) {
-                    console.error('GPT Analysis Error:', error);
-                    return this.getBasicInsights(data);
-                }
-            },
-
-            generateAnalysisPrompt(data) {
-                const sessionSummary = this.summarizeSessionData(data);
-                const taskPatterns = this.analyzeTaskPatterns(data);
-                const timePatterns = this.analyzeTimePatterns(data);
-
-                return `Analyze this study session data and provide specific, actionable insights:
-
-        SESSIONS SUMMARY:
-        ${sessionSummary}
-
-        TASK PATTERNS:
-        ${taskPatterns}
-
-        TIME PATTERNS:
-        ${timePatterns}
-
-        Provide insights in this JSON format:
-        {
-            "insights": [
-                {
-                    "icon": "emoji",
-                    "title": "insight category",
-                    "message": "detailed insight"
-                }
-            ],
-            "dataRecommendations": [
-                {
-                    "type": "what data to track",
-                    "reason": "why it would be valuable"
-                }
-            ]
-        }
-
-        Focus on patterns, correlations, and actionable recommendations. Be specific and detailed.`;
-            },
-
-            summarizeSessionData(data) {
-                const totalSessions = data.length;
-                const avgDuration = data.reduce((acc, s) => acc + s.duration, 0) / totalSessions;
-                const avgCompletion = data.reduce((acc, s) => acc + s.completionRate, 0) / totalSessions;
-
-                return `
-        - Total Sessions: ${totalSessions}
-        - Average Duration: ${formatTime(avgDuration)}
-        - Average Completion Rate: ${avgCompletion.toFixed(1)}%`;
-            },
-
-            analyzeTaskPatterns(data) {
-                // Compile task statistics
-                const taskStats = {};
-                data.forEach(session => {
-                    session.tasks.forEach(task => {
-                        if (!taskStats[task.title]) {
-                            taskStats[task.title] = {
-                                attempts: 0,
-                                completions: 0
-                            };
-                        }
-                        taskStats[task.title].attempts++;
-                        if (task.completed) taskStats[task.title].completions++;
-                    });
-                });
-
-                return Object.entries(taskStats)
-                    .map(([task, stats]) => 
-                        `${task}: ${stats.completions}/${stats.attempts} completions (${
-                            ((stats.completions/stats.attempts) * 100).toFixed(1)
-                        }%)`
-                    ).join('\n');
-            },
-
-            analyzeTimePatterns(data) {
-                const timeStats = {
-                    morningCount: 0,
-                    afternoonCount: 0,
-                    eveningCount: 0,
-                    averageDurations: {}
-                };
-
-                data.forEach(session => {
-                    const hour = new Date(session.date).getHours();
-                    if (hour < 12) timeStats.morningCount++;
-                    else if (hour < 17) timeStats.afternoonCount++;
-                    else timeStats.eveningCount++;
-                });
-
-                return `
-        - Morning Sessions: ${timeStats.morningCount}
-        - Afternoon Sessions: ${timeStats.afternoonCount}
-        - Evening Sessions: ${timeStats.eveningCount}`;
-            },
-
-            async callGPT(prompt, apiKey) {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: 'You are an expert study pattern analyst. Provide specific, actionable insights based on study session data.'
-                            },
-                            {
-                                role: 'user',
-                                content: prompt
-                            }
-                        ],
-                        temperature: 0.7
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('GPT API call failed');
-                }
-
-                const result = await response.json();
-                return result.choices[0].message.content;
-            },
-
-            parseGPTResponse(response) {
-                try {
-                    const parsed = JSON.parse(response);
-                    return parsed.insights;
-                } catch (error) {
-                    console.error('Error parsing GPT response:', error);
-                    return this.getBasicInsights(data);
-                }
-            },
-
-            getBasicInsights(data) {
-                // Fallback insights when GPT is not available
-                return [
-                    {
-                        icon: '📊',
-                        title: 'Session Patterns',
-                        message: `You've completed ${data.length} study sessions. Consider enabling enhanced insights for deeper analysis.`
-                    }
-                ];
-            }
-        };
-
-    </script>
+            </script>
 </body>
 </html>
