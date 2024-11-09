@@ -780,28 +780,39 @@
                 alertify.error('Please enter a username');
                 return;
             }
-        
+
             // Set current user
             state.currentUser = username;
             localStorage.setItem('currentUser', username);
             
-            // Initialize user data if first time
+            // Initialize or load user data
+            let userData = {
+                initialized: true,
+                sessionHistory: [],
+                journalEntries: [],
+                calendarTasks: {},
+                settings: { darkMode: false }
+            };
+
+            // Check if user exists
             if (!UserStorage.get('initialized')) {
-                UserStorage.set('initialized', true);
-                UserStorage.set('sessionHistory', []);
-                UserStorage.set('journalEntries', []);
-                UserStorage.set('calendarTasks', {});
-                UserStorage.set('settings', {
-                    darkMode: false
+                // Initialize new user
+                Object.entries(userData).forEach(([key, value]) => {
+                    UserStorage.set(key, value);
                 });
             }
-        
-            // Load user-specific data
+
+            // Load all user data into state
             state.journalEntries = UserStorage.get('journalEntries') || [];
             state.calendarTasks = UserStorage.get('calendarTasks') || {};
             state.darkMode = (UserStorage.get('settings') || {}).darkMode || false;
-        
-            // Update UI for logged-in state
+
+            // Apply theme
+            if (state.darkMode) {
+                document.body.classList.add('dark');
+            }
+
+            // Show logged in state
             showLoggedInState(username);
         }
         
@@ -1203,7 +1214,6 @@
             }
     // Journal and Session Completion
     function completeSession() {
-        console.log('Completing session...');  // Debug log
         clearInterval(state.timer);
         
         const sessionData = {
@@ -1217,24 +1227,20 @@
             date: new Date().toISOString()
         };
 
-        console.log('Session data:', sessionData);  // Debug log
-
-        // Save session data immediately
+        // Save session data
         let history = UserStorage.get('sessionHistory') || [];
         history.push(sessionData);
         UserStorage.set('sessionHistory', history);
 
-        // Show report view first
+        // Show report view
         showSessionReport(sessionData);
 
-        // Then prompt for journal entry
-        setTimeout(() => {  // Add slight delay for better UX
+        // Prompt for journal entry
+        setTimeout(() => {
             alertify.prompt('Session Journal',
                 'Write a brief reflection or gratitude note (max 200 words):',
                 '',
                 function(evt, value) {
-                    console.log('Journal entry submitted:', value);  // Debug log
-                    
                     if (value && value.trim()) {
                         const journalEntry = {
                             date: new Date().toISOString(),
@@ -1242,45 +1248,19 @@
                             sessionData: sessionData
                         };
 
-                        // Get existing entries
+                        // Get and update journal entries
                         let entries = UserStorage.get('journalEntries') || [];
                         entries.push(journalEntry);
-                        
-                        // Save to storage
                         UserStorage.set('journalEntries', entries);
+
+                        // Update state with new entry
                         state.journalEntries = entries;
-                        
-                        console.log('Saved journal entry:', journalEntry);
                     }
 
-                    // Reset session state but preserve user data
-                    const savedUser = state.currentUser;
-                    const savedDarkMode = state.darkMode;
-                    const savedJournalEntries = state.journalEntries;
-                    const savedCalendarTasks = state.calendarTasks;
-
-                    state = {
-                        currentUser: savedUser,
-                        darkMode: savedDarkMode,
-                        journalEntries: savedJournalEntries,
-                        calendarTasks: savedCalendarTasks,
-                        mode: null,
-                        tasks: [],
-                        currentTask: 0,
-                        timer: null,
-                        startTime: null,
-                        totalTime: 0,
-                        elapsedTime: 0,
-                        paused: true,
-                        taskTimes: {},
-                        breakMode: null,
-                        nextBreak: null,
-                        focusMode: false,
-                        currentTaskIndex: 0
-                    };
-
-                    goToHomepage();
-                    alertify.success('Session completed successfully!');
+                    startNewSession();
+                },
+                function() {
+                    startNewSession();
                 }
             );
         }, 500);
@@ -1620,13 +1600,18 @@
     }
 
     function startNewSession() {
-        // Reset session-specific state while preserving user data
+        // Preserve important state data
         const savedUser = state.currentUser;
         const savedDarkMode = state.darkMode;
-        
+        const savedJournalEntries = UserStorage.get('journalEntries') || [];
+        const savedCalendarTasks = UserStorage.get('calendarTasks') || {};
+
+        // Reset state
         state = {
             currentUser: savedUser,
             darkMode: savedDarkMode,
+            journalEntries: savedJournalEntries,
+            calendarTasks: savedCalendarTasks,
             mode: null,
             tasks: [],
             currentTask: 0,
@@ -1641,8 +1626,8 @@
             focusMode: false,
             currentTaskIndex: 0
         };
-        
-        // Return to mode selection
+
+        // Go to mode selection
         hideAllViews();
         document.getElementById('modeSelection').classList.remove('hidden');
     }
@@ -1701,27 +1686,37 @@
     }
 
     function updateAnalytics(history) {
+        console.log('Updating analytics with history:', history);
+        
         if (!history || history.length === 0) {
             setEmptyAnalytics();
             return;
         }
 
-        // Calculate basic stats
-        const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
-        const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+        try {
+            // Calculate basic stats
+            const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
+            const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
 
-        // Update summary statistics
-        document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
-        document.getElementById('totalSessions').textContent = history.length;
-        document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
+            // Update summary statistics
+            document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
+            document.getElementById('totalSessions').textContent = history.length;
+            document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
 
-        // Initialize charts with the updated theme
-        const darkMode = document.body.classList.contains('dark');
-        initializeCharts(history, darkMode);
-        
-        // Update rankings and insights
-        updateTaskRankings(history);
-        updateInsights(history);
+            // Update task rankings
+            updateTaskRankings(history);
+            
+            // Update insights
+            updateInsights(history);
+
+            // Initialize charts
+            const darkMode = document.body.classList.contains('dark');
+            initializeCharts(history, darkMode);
+
+        } catch (error) {
+            console.error('Error updating analytics:', error);
+            setEmptyAnalytics();
+        }
     }
 
     function updateTaskRankings(history) {
@@ -1817,6 +1812,23 @@
             .sort(([,a], [,b]) => b - a)[0];
         
         return bestDay ? bestDay[0] : 'Not enough data';
+    }
+
+    function cleanupOldTasks() {
+        if (!state.currentUser) return;
+        
+        const currentTime = new Date();
+        let calendarTasks = UserStorage.get('calendarTasks') || {};
+        
+        // Remove tasks older than 30 days
+        Object.keys(calendarTasks).forEach(dateStr => {
+            const taskDate = new Date(dateStr);
+            if ((currentTime - taskDate) > (30 * 24 * 60 * 60 * 1000)) {
+                delete calendarTasks[dateStr];
+            }
+        });
+        
+        UserStorage.set('calendarTasks', calendarTasks);
     }
     </script>
 </body>
