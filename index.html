@@ -1360,8 +1360,13 @@
     function toggleAnalyticsView() {
         hideAllViews();
         document.getElementById('analyticsView').classList.remove('hidden');
+
         const history = UserStorage.get('sessionHistory') || [];
-        updateAnalytics(history);
+        if (history.length === 0) {
+            setEmptyAnalytics();
+        } else {
+            updateAnalytics(history);
+        }
     }
     
     function setEmptyAnalytics() {
@@ -1376,18 +1381,15 @@
     
     function initializeCharts(history, darkMode = false) {
         const textColor = darkMode ? '#e2e8f0' : '#1a202c';
-        
+
         const dailyCtx = document.getElementById('dailyPatternChart');
         const focusCtx = document.getElementById('focusDistributionChart');
 
-        // Clean up existing charts
+        // Destroy existing charts if they exist
         if (window.dailyPatternChart) window.dailyPatternChart.destroy();
         if (window.focusDistributionChart) window.focusDistributionChart.destroy();
 
-        // Set chart defaults
-        Chart.defaults.color = textColor;
-        Chart.defaults.borderColor = darkMode ? '#4a5568' : '#e2e8f0';
-
+        // Prepare data for charts
         const dailyData = getDailyPatternData(history);
         const focusData = getFocusDistributionData(history);
 
@@ -1704,9 +1706,7 @@
     }
 
     function updateAnalytics(history) {
-        console.log('Updating analytics with history:', history);
-        
-        if (!history || !Array.isArray(history) || history.length === 0) {
+        if (!history.length) {
             setEmptyAnalytics();
             return;
         }
@@ -1719,28 +1719,22 @@
                 typeof session.completionRate === 'number'
             );
 
-            if (history.length === 0) {
-                setEmptyAnalytics();
-                return;
-            }
-
-            // Calculate basic stats
+            // Calculate total time, average completion, etc.
             const totalTime = history.reduce((acc, session) => acc + (session.duration || 0), 0);
             const avgCompletion = history.reduce((acc, session) => acc + (session.completionRate || 0), 0) / history.length;
 
-            // Update summary statistics
+            // Update summary statistics in the UI
             document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
             document.getElementById('totalSessions').textContent = history.length;
             document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
 
-            // Update task rankings with valid tasks only
-            const validTasks = history.filter(session => Array.isArray(session.tasks));
-            updateTaskRankings(validTasks);
-            
-            // Update insights
+            // Populate rankings
+            updateTaskRankings(history);
+
+            // Display insights
             updateInsights(history);
 
-            // Initialize charts
+            // Initialize charts with the correct theme
             const darkMode = document.body.classList.contains('dark');
             initializeCharts(history, darkMode);
 
