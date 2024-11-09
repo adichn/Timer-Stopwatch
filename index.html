@@ -651,49 +651,9 @@
         };
 
         function toggleJournalView() {
-            console.log('Toggle Journal View');  // Debug log
             hideAllViews();
-            const journalView = document.getElementById('journalView');
-            if (!journalView) {
-                console.error('Journal view not found');
-                return;
-            }
-            
-            journalView.classList.remove('hidden');
-            
-            // Get fresh journal entries from storage
-            const entries = UserStorage.get('journalEntries') || [];
-            console.log('Retrieved journal entries:', entries);
-            
-            const journalEntries = document.getElementById('journalEntries');
-            if (!journalEntries) {
-                console.error('Journal entries container not found');
-                return;
-            }
-
-            if (entries.length === 0) {
-                journalEntries.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">No journal entries yet.</p>';
-                return;
-            }
-            
-            journalEntries.innerHTML = entries
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .map(entry => `
-                    <div class="journal-entry p-4 mb-4 rounded-lg">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">
-                                ${new Date(entry.date).toLocaleString()}
-                            </span>
-                        </div>
-                        <p class="text-gray-800 dark:text-gray-200 mb-3">
-                            ${entry.content}
-                        </p>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
-                            <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
-                            <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
-                        </div>
-                    </div>
-                `).join('');
+            document.getElementById('journalView').classList.remove('hidden');
+            renderJournalEntries();
         }
 
         function toggleTheme() {
@@ -716,15 +676,8 @@
         }
 
         function toggleCalendarView() {
-            console.log('Toggle Calendar View');  // Debug log
             hideAllViews();
-            const calendarView = document.getElementById('calendarView');
-            if (!calendarView) {
-                console.error('Calendar view not found');
-                return;
-            }
-            
-            calendarView.classList.remove('hidden');
+            document.getElementById('calendarView').classList.remove('hidden');
             renderCalendar();
         }
         
@@ -901,6 +854,7 @@
                 }
             });
         }
+
         
         </script>
         <script>
@@ -1381,39 +1335,9 @@
     // Analytics functions
     function toggleAnalyticsView() {
         hideAllViews();
-        const analyticsView = document.getElementById('analyticsView');
-        analyticsView.classList.remove('hidden');
-        
-        // Get fresh data from storage
+        document.getElementById('analyticsView').classList.remove('hidden');
         const history = UserStorage.get('sessionHistory') || [];
-        console.log('Loading analytics with history:', history);
-        
-        try {
-            if (!history || history.length === 0) {
-                setEmptyAnalytics();
-                return;
-            }
-    
-            // Calculate basic stats
-            const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
-            const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
-    
-            // Update summary statistics
-            document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
-            document.getElementById('totalSessions').textContent = history.length;
-            document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
-    
-            // Initialize charts
-            initializeCharts(history);
-            
-            // Update rankings and insights
-            updateTaskRankings(history);
-            updateInsights(history);
-        } catch (error) {
-            console.error('Error updating analytics:', error);
-            setEmptyAnalytics();
-            alertify.error('Error updating analytics');
-        }
+        updateAnalytics(history);
     }
     
     function setEmptyAnalytics() {
@@ -1645,6 +1569,140 @@
                 </div>
             </div>
         `;
+    }
+
+    function renderJournalEntries() {
+        const journalEntries = document.getElementById('journalEntries');
+        const entries = UserStorage.get('journalEntries') || [];
+        
+        if (!entries || entries.length === 0) {
+            journalEntries.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">No journal entries yet.</p>';
+            return;
+        }
+        
+        journalEntries.innerHTML = entries
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .map(entry => `
+                <div class="journal-entry">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            ${new Date(entry.date).toLocaleString()}
+                        </span>
+                    </div>
+                    <p class="text-gray-800 dark:text-gray-200 mb-3">
+                        ${entry.content}
+                    </p>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
+                        <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
+                        <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    function startNewSession() {
+        // Reset session-specific state while preserving user data
+        const savedUser = state.currentUser;
+        const savedDarkMode = state.darkMode;
+        
+        state = {
+            currentUser: savedUser,
+            darkMode: savedDarkMode,
+            mode: null,
+            tasks: [],
+            currentTask: 0,
+            timer: null,
+            startTime: null,
+            totalTime: 0,
+            elapsedTime: 0,
+            paused: true,
+            taskTimes: {},
+            breakMode: null,
+            nextBreak: null,
+            focusMode: false,
+            currentTaskIndex: 0
+        };
+        
+        // Return to mode selection
+        hideAllViews();
+        document.getElementById('modeSelection').classList.remove('hidden');
+    }
+
+    function renderCalendar() {
+        const calendarGrid = document.getElementById('calendarGrid');
+        if (!calendarGrid) return;
+        
+        const today = new Date();
+        const calendarTasks = UserStorage.get('calendarTasks') || {};
+        
+        // Generate dates for current week and next two weeks
+        const dates = [];
+        for (let i = 0; i < 21; i++) {
+            const date = new Date();
+            date.setDate(today.getDate() + i);
+            dates.push(date);
+        }
+        
+        calendarGrid.innerHTML = dates.map(date => {
+            const dateStr = date.toISOString().split('T')[0];
+            const tasks = calendarTasks[dateStr] || [];
+            const isToday = date.toDateString() === today.toDateString();
+            
+            return `
+                <div class="calendar-day ${isToday ? 'current-day' : ''}">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold dark:text-white">
+                            ${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </h3>
+                        <button onclick="addCalendarTask('${dateStr}')" 
+                            class="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Add
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${tasks.map((task, index) => `
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center">
+                                    <input type="checkbox" 
+                                        ${task.completed ? 'checked' : ''} 
+                                        onchange="toggleCalendarTask('${dateStr}', ${index})"
+                                        class="mr-2">
+                                    <span class="${task.completed ? 'line-through' : ''} dark:text-white">
+                                        ${task.title}
+                                    </span>
+                                </label>
+                                <button onclick="deleteCalendarTask('${dateStr}', ${index})"
+                                    class="text-red-500 hover:text-red-600">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateAnalytics(history) {
+        if (!history || history.length === 0) {
+            setEmptyAnalytics();
+            return;
+        }
+
+        // Calculate basic stats
+        const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
+        const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+
+        // Update summary statistics
+        document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
+        document.getElementById('totalSessions').textContent = history.length;
+        document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
+
+        // Initialize charts with the updated theme
+        const darkMode = document.body.classList.contains('dark');
+        initializeCharts(history, darkMode);
+        
+        // Update rankings and insights
+        updateTaskRankings(history);
+        updateInsights(history);
     }
     </script>
 </body>
