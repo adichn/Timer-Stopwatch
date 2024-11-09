@@ -653,7 +653,35 @@
         function toggleJournalView() {
             hideAllViews();
             document.getElementById('journalView').classList.remove('hidden');
-            renderJournalEntries();
+            
+            // Get fresh data directly from storage
+            const entries = UserStorage.get('journalEntries') || [];
+            console.log('Loading journal entries:', entries);
+            
+            const journalEntriesDiv = document.getElementById('journalEntries');
+            if (entries.length === 0) {
+                journalEntriesDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">No journal entries yet.</p>';
+                return;
+            }
+            
+            journalEntriesDiv.innerHTML = entries
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map(entry => `
+                    <div class="journal-entry p-4 rounded-lg shadow-sm mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                ${new Date(entry.date).toLocaleString()}
+                            </span>
+                        </div>
+                        <p class="text-gray-800 dark:text-gray-200 mb-3">
+                            ${entry.content}
+                        </p>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
+                            <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
+                            <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
+                        </div>
+                    </div>
+                `).join('');
         }
 
         function toggleTheme() {
@@ -1277,7 +1305,7 @@
                 }
                 
                 // Get fresh calendar tasks from storage
-                const currentTasks = UserStorage.get('calendarTasks') || {};
+                let currentTasks = UserStorage.get('calendarTasks') || {};
                 
                 // Initialize array for this date if it doesn't exist
                 if (!currentTasks[dateStr]) {
@@ -1288,21 +1316,19 @@
                 const newTask = {
                     id: Date.now(),
                     title: value.trim(),
-                    completed: false,
-                    subtasks: []
+                    completed: false
                 };
                 
                 currentTasks[dateStr].push(newTask);
                 
-                // Update both state and storage
-                state.calendarTasks = currentTasks;
+                // Save to storage
                 UserStorage.set('calendarTasks', currentTasks);
                 
-                console.log('Added calendar task:', newTask);
+                // Update state
+                state.calendarTasks = currentTasks;
                 
                 // Re-render calendar
                 renderCalendar();
-                alertify.success('Task added successfully');
             }
         );
     }
@@ -1350,22 +1376,23 @@
         initializeCharts([]); // Initialize empty charts
     }
     
-    function initializeCharts(history) {
+    function initializeCharts(history, darkMode = false) {
+        const textColor = darkMode ? '#e2e8f0' : '#1a202c';
+        
         const dailyCtx = document.getElementById('dailyPatternChart');
         const focusCtx = document.getElementById('focusDistributionChart');
-    
-        // Destroy existing charts
-        if (window.dailyPatternChart) {
-            window.dailyPatternChart.destroy();
-        }
-        if (window.focusDistributionChart) {
-            window.focusDistributionChart.destroy();
-        }
-    
-        // Create charts with data
+
+        // Clean up existing charts
+        if (window.dailyPatternChart) window.dailyPatternChart.destroy();
+        if (window.focusDistributionChart) window.focusDistributionChart.destroy();
+
+        // Set chart defaults
+        Chart.defaults.color = textColor;
+        Chart.defaults.borderColor = darkMode ? '#4a5568' : '#e2e8f0';
+
         const dailyData = getDailyPatternData(history);
         const focusData = getFocusDistributionData(history);
-    
+
         window.dailyPatternChart = new Chart(dailyCtx, {
             type: 'bar',
             data: dailyData,
@@ -1375,27 +1402,21 @@
                 plugins: {
                     legend: {
                         display: true,
-                        labels: {
-                            color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                        }
+                        labels: { color: textColor }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                        }
+                        ticks: { color: textColor }
                     },
                     x: {
-                        ticks: {
-                            color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                        }
+                        ticks: { color: textColor }
                     }
                 }
             }
         });
-    
+
         window.focusDistributionChart = new Chart(focusCtx, {
             type: 'doughnut',
             data: focusData,
@@ -1406,9 +1427,7 @@
                     legend: {
                         display: true,
                         position: 'bottom',
-                        labels: {
-                            color: document.body.classList.contains('dark') ? '#e2e8f0' : '#1a202c'
-                        }
+                        labels: { color: textColor }
                     }
                 }
             }
@@ -1703,6 +1722,101 @@
         // Update rankings and insights
         updateTaskRankings(history);
         updateInsights(history);
+    }
+
+    function updateTaskRankings(history) {
+        // Get all tasks across sessions
+        const taskStats = {};
+        
+        history.forEach(session => {
+            session.tasks.forEach(task => {
+                if (!taskStats[task.title]) {
+                    taskStats[task.title] = {
+                        completed: 0,
+                        total: 0
+                    };
+                }
+                taskStats[task.title].total++;
+                if (task.completed) {
+                    taskStats[task.title].completed++;
+                }
+            });
+        });
+
+        // Sort tasks by completion rate
+        const sortedTasks = Object.entries(taskStats)
+            .map(([title, stats]) => ({
+                title,
+                completionRate: (stats.completed / stats.total) * 100,
+                completed: stats.completed,
+                total: stats.total
+            }))
+            .sort((a, b) => b.completionRate - a.completionRate);
+
+        // Display most completed tasks
+        const mostCompletedDiv = document.getElementById('mostCompletedTasks');
+        mostCompletedDiv.innerHTML = sortedTasks.slice(0, 5)
+            .map(task => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                    <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
+                    <span class="text-green-600 dark:text-green-400">${Math.round(task.completionRate)}%</span>
+                </div>
+            `).join('') || '<p class="text-gray-500">No task data available</p>';
+
+        // Display improvement areas
+        const leastCompletedDiv = document.getElementById('leastCompletedTasks');
+        leastCompletedDiv.innerHTML = sortedTasks.slice(-5).reverse()
+            .map(task => `
+                <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                    <span class="text-gray-800 dark:text-gray-200">${task.title}</span>
+                    <span class="text-red-600 dark:text-red-400">${Math.round(task.completionRate)}%</span>
+                </div>
+            `).join('') || '<p class="text-gray-500">No task data available</p>';
+    }
+
+    function updateInsights(history) {
+        if (!history.length) {
+            document.getElementById('analyticsInsights').innerHTML = 
+                '<p class="text-gray-500">Complete more sessions to see insights</p>';
+            return;
+        }
+
+        const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
+        const avgSessionTime = totalTime / history.length;
+        const bestDay = getDayWithMostStudyTime(history);
+        const avgCompletionRate = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+
+        document.getElementById('analyticsInsights').innerHTML = `
+            <div class="space-y-4">
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <h4 class="font-semibold text-gray-800 dark:text-white">Average Session Length</h4>
+                    <p class="text-gray-600 dark:text-gray-300">${formatTime(avgSessionTime)}</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <h4 class="font-semibold text-gray-800 dark:text-white">Most Productive Day</h4>
+                    <p class="text-gray-600 dark:text-gray-300">${bestDay}</p>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                    <h4 class="font-semibold text-gray-800 dark:text-white">Task Completion Trend</h4>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Average completion rate: ${Math.round(avgCompletionRate)}%
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+
+    function getDayWithMostStudyTime(history) {
+        const dayTotals = history.reduce((acc, session) => {
+            const day = new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' });
+            acc[day] = (acc[day] || 0) + session.duration;
+            return acc;
+        }, {});
+
+        const bestDay = Object.entries(dayTotals)
+            .sort(([,a], [,b]) => b - a)[0];
+        
+        return bestDay ? bestDay[0] : 'Not enough data';
     }
     </script>
 </body>
