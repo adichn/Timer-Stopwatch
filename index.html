@@ -743,28 +743,23 @@
         });
         
         function initializeApp() {
+            // Load user from localStorage
             const currentUser = localStorage.getItem('currentUser');
             if (currentUser) {
                 state.currentUser = currentUser;
                 
                 // Load all user data
-                state.journalEntries = UserStorage.get('journalEntries') || [];
-                state.calendarTasks = UserStorage.get('calendarTasks') || {};
-                
-                // Load settings
                 const settings = UserStorage.get('settings') || {};
                 state.darkMode = settings.darkMode || false;
                 if (state.darkMode) {
                     document.body.classList.add('dark');
                 }
-        
-                // Initialize analytics if available
-                const history = UserStorage.get('sessionHistory') || [];
-                if (history.length > 0) {
-                    updateAnalytics(history);
-                }
-        
+
                 showLoggedInState(currentUser);
+            } else {
+                // If no user, show login form
+                hideAllViews();
+                document.getElementById('loginForm').classList.remove('hidden');
             }
         }
         
