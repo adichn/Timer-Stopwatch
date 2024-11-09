@@ -659,29 +659,45 @@
             console.log('Loading journal entries:', entries);
             
             const journalEntriesDiv = document.getElementById('journalEntries');
-            if (entries.length === 0) {
+            
+            // Ensure we have the element
+            if (!journalEntriesDiv) {
+                console.error('Journal entries container not found');
+                return;
+            }
+
+            if (!entries || entries.length === 0) {
                 journalEntriesDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">No journal entries yet.</p>';
                 return;
             }
-            
-            journalEntriesDiv.innerHTML = entries
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .map(entry => `
-                    <div class="journal-entry p-4 rounded-lg shadow-sm mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">
-                                ${new Date(entry.date).toLocaleString()}
-                            </span>
+
+            try {
+                // Filter out invalid entries and sort
+                const validEntries = entries
+                    .filter(entry => entry && entry.date && entry.content && entry.sessionData)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                journalEntriesDiv.innerHTML = validEntries
+                    .map(entry => `
+                        <div class="journal-entry p-4 rounded-lg shadow-sm mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">
+                                    ${new Date(entry.date).toLocaleString()}
+                                </span>
+                            </div>
+                            <p class="text-gray-800 dark:text-gray-200 mb-3">
+                                ${entry.content}
+                            </p>
+                            <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
+                                <div>Session Duration: ${formatTime(entry.sessionData.duration || 0)}</div>
+                                <div>Completion Rate: ${Math.round(entry.sessionData.completionRate || 0)}%</div>
+                            </div>
                         </div>
-                        <p class="text-gray-800 dark:text-gray-200 mb-3">
-                            ${entry.content}
-                        </p>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
-                            <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
-                            <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
-                        </div>
-                    </div>
-                `).join('');
+                    `).join('');
+            } catch (error) {
+                console.error('Error rendering journal entries:', error);
+                journalEntriesDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">Error loading journal entries</p>';
+            }
         }
 
         function toggleTheme() {
@@ -1232,7 +1248,7 @@
         history.push(sessionData);
         UserStorage.set('sessionHistory', history);
 
-        // Show report view
+        // Show report view first
         showSessionReport(sessionData);
 
         // Prompt for journal entry
@@ -1257,10 +1273,12 @@
                         state.journalEntries = entries;
                     }
 
-                    startNewSession();
+                    // Keep showing the report view
+                    showSessionReport(sessionData);
                 },
                 function() {
-                    startNewSession();
+                    // If cancelled, keep showing the report view
+                    showSessionReport(sessionData);
                 }
             );
         }, 500);
@@ -1688,23 +1706,36 @@
     function updateAnalytics(history) {
         console.log('Updating analytics with history:', history);
         
-        if (!history || history.length === 0) {
+        if (!history || !Array.isArray(history) || history.length === 0) {
             setEmptyAnalytics();
             return;
         }
 
         try {
+            // Filter out any invalid entries
+            history = history.filter(session => 
+                session && 
+                typeof session.duration === 'number' && 
+                typeof session.completionRate === 'number'
+            );
+
+            if (history.length === 0) {
+                setEmptyAnalytics();
+                return;
+            }
+
             // Calculate basic stats
-            const totalTime = history.reduce((acc, session) => acc + session.duration, 0);
-            const avgCompletion = history.reduce((acc, session) => acc + session.completionRate, 0) / history.length;
+            const totalTime = history.reduce((acc, session) => acc + (session.duration || 0), 0);
+            const avgCompletion = history.reduce((acc, session) => acc + (session.completionRate || 0), 0) / history.length;
 
             // Update summary statistics
             document.getElementById('totalStudyTime').textContent = formatTime(totalTime);
             document.getElementById('totalSessions').textContent = history.length;
             document.getElementById('avgCompletionRate').textContent = `${Math.round(avgCompletion)}%`;
 
-            // Update task rankings
-            updateTaskRankings(history);
+            // Update task rankings with valid tasks only
+            const validTasks = history.filter(session => Array.isArray(session.tasks));
+            updateTaskRankings(validTasks);
             
             // Update insights
             updateInsights(history);
