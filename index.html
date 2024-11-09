@@ -818,18 +818,25 @@
         });
 
         function initializeApp() {
-            // Check for current user
             const currentUser = localStorage.getItem('currentUser');
             if (currentUser) {
                 state.currentUser = currentUser;
                 
-                // Load user-specific data
+                // Load all user data
                 state.journalEntries = UserStorage.get('journalEntries') || [];
                 state.calendarTasks = UserStorage.get('calendarTasks') || {};
-                state.darkMode = (UserStorage.get('settings') || {}).darkMode || false;
-
+                
+                // Load settings
+                const settings = UserStorage.get('settings') || {};
+                state.darkMode = settings.darkMode || false;
                 if (state.darkMode) {
                     document.body.classList.add('dark');
+                }
+
+                // Initialize analytics if available
+                const history = UserStorage.get('sessionHistory') || [];
+                if (history.length > 0) {
+                    updateAnalytics(history);
                 }
 
                 showLoggedInState(currentUser);
@@ -984,12 +991,11 @@
             const journalView = document.getElementById('journalView');
             journalView.classList.remove('hidden');
             
-            // Get fresh journal entries from storage
-            state.journalEntries = UserStorage.get('journalEntries') || [];
-            
-            // Render journal entries
+            // Get fresh data from storage
+            const entries = UserStorage.get('journalEntries') || [];
             const journalEntries = document.getElementById('journalEntries');
-            journalEntries.innerHTML = state.journalEntries
+            
+            journalEntries.innerHTML = entries
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(entry => `
                     <div class="journal-entry">
@@ -1009,6 +1015,15 @@
         }
         function updateAnalyticsCharts(history) {
             if (window.Chart) {
+                // Clear existing charts
+                if (window.dailyPatternChart) {
+                    window.dailyPatternChart.destroy();
+                }
+                if (window.focusDistributionChart) {
+                    window.focusDistributionChart.destroy();
+                }
+                
+                // Reinitialize with new data
                 initializeCharts(history);
             }
         }
@@ -1090,9 +1105,18 @@
             const analyticsView = document.getElementById('analyticsView');
             analyticsView.classList.remove('hidden');
             
-            // Get session history and update analytics
+            // Get fresh data from storage
             const history = UserStorage.get('sessionHistory') || [];
-            updateAnalytics(history);
+            if (!history || history.length === 0) {
+                document.getElementById('totalStudyTime').textContent = formatTime(0);
+                document.getElementById('totalSessions').textContent = '0';
+                document.getElementById('avgCompletionRate').textContent = '0%';
+                
+                // Clear charts
+                initializeCharts([]);
+            } else {
+                updateAnalytics(history);
+            }
         }
 
         function updateTaskRankings(history) {
@@ -1608,7 +1632,12 @@
                 date: new Date().toISOString()
             };
 
-            // Show report first
+            // Save session data immediately
+            let history = UserStorage.get('sessionHistory') || [];
+            history.push(sessionData);
+            UserStorage.set('sessionHistory', history);
+
+            // Show report
             showSessionReport(sessionData);
 
             // Then prompt for journal entry
@@ -1616,27 +1645,29 @@
                 'Write a brief reflection or gratitude note (max 200 words):',
                 '',
                 function(evt, value) {
-                    // Save session data first
-                    const history = UserStorage.get('sessionHistory') || [];
-                    history.push(sessionData);
-                    UserStorage.set('sessionHistory', history);
-                    
-                    if (value.trim()) {
+                    if (value && value.trim()) {
                         const journalEntry = {
                             date: sessionData.date,
                             content: value.trim().slice(0, 200),
                             sessionData: sessionData
                         };
                         
-                        // Update journal entries in state and storage
-                        state.journalEntries = UserStorage.get('journalEntries') || [];
-                        state.journalEntries.push(journalEntry);
-                        UserStorage.set('journalEntries', state.journalEntries);
+                        // Get current entries and add new one
+                        let entries = UserStorage.get('journalEntries') || [];
+                        entries.push(journalEntry);
+                        UserStorage.set('journalEntries', entries);
+                        
+                        // Update state
+                        state.journalEntries = entries;
                     }
 
                     // Clear current session state
                     state = {
                         ...state,
+                        currentUser: state.currentUser, // Preserve user
+                        darkMode: state.darkMode, // Preserve theme
+                        journalEntries: state.journalEntries, // Preserve entries
+                        calendarTasks: state.calendarTasks, // Preserve tasks
                         mode: null,
                         tasks: [],
                         currentTask: 0,
@@ -1652,7 +1683,6 @@
                         currentTaskIndex: 0
                     };
 
-                    // Return to home screen
                     goToHomepage();
                     alertify.success('Session completed successfully!');
                 }
