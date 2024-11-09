@@ -991,27 +991,35 @@
             const journalView = document.getElementById('journalView');
             journalView.classList.remove('hidden');
             
-            // Get fresh data from storage
+            // Get fresh journal entries from storage
             const entries = UserStorage.get('journalEntries') || [];
+            console.log('Retrieved journal entries:', entries); // Debug log
+            
             const journalEntries = document.getElementById('journalEntries');
+            if (entries.length === 0) {
+                journalEntries.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">No journal entries yet.</p>';
+                return;
+            }
             
             journalEntries.innerHTML = entries
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(entry => `
-                    <div class="journal-entry">
+                    <div class="journal-entry p-4 mb-4 rounded-lg">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-sm text-gray-500 dark:text-gray-400">
                                 ${new Date(entry.date).toLocaleString()}
                             </span>
                         </div>
-                        <p class="text-gray-800 dark:text-gray-200">${entry.content}</p>
-                        <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                        <p class="text-gray-800 dark:text-gray-200 mb-3">
+                            ${entry.content}
+                        </p>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
                             <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
                             <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
                         </div>
                     </div>
                 `)
-                .join('') || '<p class="text-gray-500 dark:text-gray-400">No journal entries yet.</p>';
+                .join('');
         }
         function updateAnalyticsCharts(history) {
             if (window.Chart) {
@@ -1535,30 +1543,45 @@
         }
 
         function addCalendarTask(dateStr) {
-            alertify.prompt('New Task', 'Enter task title:', '', 
+            alertify.prompt('New Task', 'Enter task title:', '',
                 function(evt, value) {
                     if (!value || !value.trim()) {
                         alertify.error('Please enter a task title');
                         return;
                     }
                     
+                    // Get fresh calendar tasks
+                    state.calendarTasks = UserStorage.get('calendarTasks') || {};
+                    
+                    // Initialize array for this date if it doesn't exist
                     if (!state.calendarTasks[dateStr]) {
                         state.calendarTasks[dateStr] = [];
                     }
                     
-                    state.calendarTasks[dateStr].push({
+                    // Add new task
+                    const newTask = {
                         id: Date.now(),
                         title: value.trim(),
                         completed: false,
                         subtasks: []
-                    });
+                    };
                     
+                    state.calendarTasks[dateStr].push(newTask);
+                    
+                    // Save to storage
                     UserStorage.set('calendarTasks', state.calendarTasks);
+                    
+                    // Debug log
+                    console.log('Added calendar task:', newTask);
+                    console.log('Current calendar tasks:', state.calendarTasks);
+                    
+                    // Refresh the calendar view
                     renderCalendar();
                     alertify.success('Task added successfully');
                 }
-            ).set('closable', false);
+            );
         }
+
 
         function toggleCalendarTask(dateStr, index) {
             const task = state.calendarTasks[dateStr][index];
@@ -1632,13 +1655,13 @@
                 date: new Date().toISOString()
             };
 
-            // Save session data immediately
+            // Show report first
+            showSessionReport(sessionData);
+
+            // Save session data first
             let history = UserStorage.get('sessionHistory') || [];
             history.push(sessionData);
             UserStorage.set('sessionHistory', history);
-
-            // Show report
-            showSessionReport(sessionData);
 
             // Then prompt for journal entry
             alertify.prompt('Session Journal',
@@ -1646,28 +1669,27 @@
                 '',
                 function(evt, value) {
                     if (value && value.trim()) {
+                        // Create journal entry
                         const journalEntry = {
-                            date: sessionData.date,
+                            date: new Date().toISOString(),
                             content: value.trim().slice(0, 200),
                             sessionData: sessionData
                         };
+
+                        // Get existing entries
+                        let journalEntries = UserStorage.get('journalEntries') || [];
+                        journalEntries.push(journalEntry);
                         
-                        // Get current entries and add new one
-                        let entries = UserStorage.get('journalEntries') || [];
-                        entries.push(journalEntry);
-                        UserStorage.set('journalEntries', entries);
+                        // Save to storage and state
+                        UserStorage.set('journalEntries', journalEntries);
+                        state.journalEntries = journalEntries;
                         
-                        // Update state
-                        state.journalEntries = entries;
+                        console.log('Saved journal entry:', journalEntry); // Debug log
                     }
 
-                    // Clear current session state
+                    // Reset session state but keep user data
                     state = {
                         ...state,
-                        currentUser: state.currentUser, // Preserve user
-                        darkMode: state.darkMode, // Preserve theme
-                        journalEntries: state.journalEntries, // Preserve entries
-                        calendarTasks: state.calendarTasks, // Preserve tasks
                         mode: null,
                         tasks: [],
                         currentTask: 0,
@@ -1743,13 +1765,66 @@
         }
 
         function initializeCharts(history) {
-            // Initialize Daily Pattern Chart
+            if (!history || history.length === 0) {
+                const emptyData = {
+                    labels: ['No Data'],
+                    datasets: [{
+                        data: [100],
+                        backgroundColor: ['rgba(200, 200, 200, 0.8)'],
+                        borderColor: ['rgba(200, 200, 200, 1)']
+                    }]
+                };
+
+                // Initialize empty charts
+                const dailyCtx = document.getElementById('dailyPatternChart');
+                const focusCtx = document.getElementById('focusDistributionChart');
+                
+                if (dailyCtx) {
+                    if (window.dailyPatternChart) {
+                        window.dailyPatternChart.destroy();
+                    }
+                    window.dailyPatternChart = new Chart(dailyCtx, {
+                        type: 'bar',
+                        data: emptyData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                if (focusCtx) {
+                    if (window.focusDistributionChart) {
+                        window.focusDistributionChart.destroy();
+                    }
+                    window.focusDistributionChart = new Chart(focusCtx, {
+                        type: 'doughnut',
+                        data: emptyData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
+                return;
+            }
+
+            // Initialize charts with data
             const dailyCtx = document.getElementById('dailyPatternChart');
             if (dailyCtx) {
                 if (window.dailyPatternChart) {
                     window.dailyPatternChart.destroy();
                 }
-
                 const dailyData = getDailyPatternData(history);
                 window.dailyPatternChart = new Chart(dailyCtx, {
                     type: 'bar',
@@ -1788,13 +1863,11 @@
                 });
             }
 
-            // Initialize Focus Distribution Chart
             const focusCtx = document.getElementById('focusDistributionChart');
             if (focusCtx) {
                 if (window.focusDistributionChart) {
                     window.focusDistributionChart.destroy();
                 }
-
                 const focusData = getFocusDistributionData(history);
                 window.focusDistributionChart = new Chart(focusCtx, {
                     type: 'doughnut',
@@ -1814,6 +1887,10 @@
                     }
                 });
             }
+
+            // Update rankings and insights
+            updateTaskRankings(history);
+            updateInsights(history);
         }
 
         function getDailyPatternData(history) {
