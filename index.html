@@ -649,6 +649,84 @@
             journalEntries: [],
             calendarTasks: {}
         };
+
+        function toggleJournalView() {
+            console.log('Toggle Journal View');  // Debug log
+            hideAllViews();
+            const journalView = document.getElementById('journalView');
+            if (!journalView) {
+                console.error('Journal view not found');
+                return;
+            }
+            
+            journalView.classList.remove('hidden');
+            
+            // Get fresh journal entries from storage
+            const entries = UserStorage.get('journalEntries') || [];
+            console.log('Retrieved journal entries:', entries);
+            
+            const journalEntries = document.getElementById('journalEntries');
+            if (!journalEntries) {
+                console.error('Journal entries container not found');
+                return;
+            }
+
+            if (entries.length === 0) {
+                journalEntries.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center">No journal entries yet.</p>';
+                return;
+            }
+            
+            journalEntries.innerHTML = entries
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map(entry => `
+                    <div class="journal-entry p-4 mb-4 rounded-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                ${new Date(entry.date).toLocaleString()}
+                            </span>
+                        </div>
+                        <p class="text-gray-800 dark:text-gray-200 mb-3">
+                            ${entry.content}
+                        </p>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 border-t pt-2 dark:border-gray-600">
+                            <div>Session Duration: ${formatTime(entry.sessionData.duration)}</div>
+                            <div>Completion Rate: ${entry.sessionData.completionRate}%</div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function toggleTheme() {
+            console.log('Toggling theme');  // Debug log
+            state.darkMode = !state.darkMode;
+            document.body.classList.toggle('dark');
+            
+            // Save theme preference
+            if (state.currentUser) {
+                const settings = UserStorage.get('settings') || {};
+                settings.darkMode = state.darkMode;
+                UserStorage.set('settings', settings);
+            }
+
+            // Update charts if they exist
+            const history = UserStorage.get('sessionHistory') || [];
+            if (window.Chart && history.length > 0) {
+                initializeCharts(history);
+            }
+        }
+
+        function toggleCalendarView() {
+            console.log('Toggle Calendar View');  // Debug log
+            hideAllViews();
+            const calendarView = document.getElementById('calendarView');
+            if (!calendarView) {
+                console.error('Calendar view not found');
+                return;
+            }
+            
+            calendarView.classList.remove('hidden');
+            renderCalendar();
+        }
         
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
@@ -1146,12 +1224,11 @@
             function allTasksCompleted() {
                 return state.tasks.every(task => task.completed);
             }
-            </script>
-
-<script>
     // Journal and Session Completion
     function completeSession() {
+        console.log('Completing session...');  // Debug log
         clearInterval(state.timer);
+        
         const sessionData = {
             duration: state.elapsedTime,
             mode: state.mode,
@@ -1162,70 +1239,74 @@
             completionRate: calculateCompletionRate(),
             date: new Date().toISOString()
         };
-    
-        // Save session data first
+
+        console.log('Session data:', sessionData);  // Debug log
+
+        // Save session data immediately
         let history = UserStorage.get('sessionHistory') || [];
         history.push(sessionData);
         UserStorage.set('sessionHistory', history);
-        console.log('Saved session data:', sessionData);
-    
-        // Show report
+
+        // Show report view first
         showSessionReport(sessionData);
-    
+
         // Then prompt for journal entry
-        alertify.prompt('Session Journal',
-            'Write a brief reflection or gratitude note (max 200 words):',
-            '',
-            function(evt, value) {
-                if (value && value.trim()) {
-                    // Create journal entry
-                    const journalEntry = {
-                        date: new Date().toISOString(),
-                        content: value.trim().slice(0, 200),
-                        sessionData: sessionData
+        setTimeout(() => {  // Add slight delay for better UX
+            alertify.prompt('Session Journal',
+                'Write a brief reflection or gratitude note (max 200 words):',
+                '',
+                function(evt, value) {
+                    console.log('Journal entry submitted:', value);  // Debug log
+                    
+                    if (value && value.trim()) {
+                        const journalEntry = {
+                            date: new Date().toISOString(),
+                            content: value.trim().slice(0, 200),
+                            sessionData: sessionData
+                        };
+
+                        // Get existing entries
+                        let entries = UserStorage.get('journalEntries') || [];
+                        entries.push(journalEntry);
+                        
+                        // Save to storage
+                        UserStorage.set('journalEntries', entries);
+                        state.journalEntries = entries;
+                        
+                        console.log('Saved journal entry:', journalEntry);
+                    }
+
+                    // Reset session state but preserve user data
+                    const savedUser = state.currentUser;
+                    const savedDarkMode = state.darkMode;
+                    const savedJournalEntries = state.journalEntries;
+                    const savedCalendarTasks = state.calendarTasks;
+
+                    state = {
+                        currentUser: savedUser,
+                        darkMode: savedDarkMode,
+                        journalEntries: savedJournalEntries,
+                        calendarTasks: savedCalendarTasks,
+                        mode: null,
+                        tasks: [],
+                        currentTask: 0,
+                        timer: null,
+                        startTime: null,
+                        totalTime: 0,
+                        elapsedTime: 0,
+                        paused: true,
+                        taskTimes: {},
+                        breakMode: null,
+                        nextBreak: null,
+                        focusMode: false,
+                        currentTaskIndex: 0
                     };
-    
-                    // Get existing entries from storage
-                    const currentEntries = UserStorage.get('journalEntries') || [];
-                    currentEntries.push(journalEntry);
-                    
-                    // Save to storage and update state
-                    UserStorage.set('journalEntries', currentEntries);
-                    state.journalEntries = currentEntries;
-                    
-                    console.log('Saved journal entry:', journalEntry);
+
+                    goToHomepage();
+                    alertify.success('Session completed successfully!');
                 }
-    
-                // Clear session state but preserve user data
-                const savedUser = state.currentUser;
-                const savedDarkMode = state.darkMode;
-                const savedJournalEntries = state.journalEntries;
-                const savedCalendarTasks = state.calendarTasks;
-    
-                state = {
-                    currentUser: savedUser,
-                    darkMode: savedDarkMode,
-                    journalEntries: savedJournalEntries,
-                    calendarTasks: savedCalendarTasks,
-                    mode: null,
-                    tasks: [],
-                    currentTask: 0,
-                    timer: null,
-                    startTime: null,
-                    totalTime: 0,
-                    elapsedTime: 0,
-                    paused: true,
-                    taskTimes: {},
-                    breakMode: null,
-                    nextBreak: null,
-                    focusMode: false,
-                    currentTaskIndex: 0
-                };
-    
-                goToHomepage();
-                alertify.success('Session completed successfully!');
-            }
-        );
+            );
+        }, 500);
     }
     
     function calculateCompletionRate() {
@@ -1499,6 +1580,77 @@
         hideAllViews();
         document.getElementById('modeSelection').classList.remove('hidden');
     }
+    function isViewVisible(viewId) {
+        const view = document.getElementById(viewId);
+        return view && !view.classList.contains('hidden');
+    }
+
+    function showSessionReport(sessionData) {
+        console.log('Showing session report');  // Debug log
+        hideAllViews();
+        const reportView = document.getElementById('reportView');
+        if (!reportView) {
+            console.error('Report view not found');
+            return;
+        }
+        
+        reportView.classList.remove('hidden');
+        
+        const reportContent = document.getElementById('reportContent');
+        if (!reportContent) {
+            console.error('Report content container not found');
+            return;
+        }
+
+        reportContent.innerHTML = `
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="stat-card">
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Duration</h4>
+                        <p class="stat-value">${formatTime(sessionData.duration)}</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Tasks Completed</h4>
+                        <p class="stat-value">${sessionData.completionRate}%</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Mode</h4>
+                        <p class="stat-value">${sessionData.mode === 'timer' ? 'Timer' : 'Stopwatch'}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Task Summary</h3>
+                    ${sessionData.tasks.map(task => `
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <span class="text-lg ${task.completed ? 'line-through' : ''} dark:text-white">
+                                    ${task.title}
+                                </span>
+                                <span class="ml-auto text-sm ${task.completed ? 'text-green-500' : 'text-red-500'}">
+                                    ${task.completed ? 'Completed' : 'Incomplete'}
+                                </span>
+                            </div>
+                            ${task.subtasks.length ? `
+                                <div class="ml-4 space-y-1">
+                                    ${task.subtasks.map(subtask => `
+                                        <div class="flex items-center">
+                                            <span class="text-sm ${subtask.completed ? 'line-through' : ''} dark:text-gray-300">
+                                                ${subtask.title}
+                                            </span>
+                                            <span class="ml-auto text-xs ${subtask.completed ? 'text-green-500' : 'text-red-500'}">
+                                                ${subtask.completed ? 'Done' : 'Not Done'}
+                                            </span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
     </script>
-    </body>
-    </html>
+</body>
+</html>
